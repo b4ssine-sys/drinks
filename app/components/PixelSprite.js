@@ -32,6 +32,7 @@ export default function PixelSprite({
           backgroundSize: `${scaledWidth * frames}px ${scaledHeight}px`,
           '--sprite-duration': `${duration}s`,
           '--sprite-steps': frames,
+          '--sprite-end-x': `-${scaledWidth * frames}px`,
         }}
       />
       {label && <span className="pixel-sprite-label">{label}</span>}
