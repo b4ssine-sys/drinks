@@ -1,29 +1,37 @@
 'use client';
 
+import { useCallback } from 'react';
+
 export default function PixelSprite({
   spriteSheetSrc,
   frameWidth,
   frameHeight,
   frames = 2,
-  fps = 2,
+  duration = 0.4,
   scale = 3,
+  playing = false,
+  onComplete,
   label,
 }) {
   const scaledWidth = frameWidth * scale;
   const scaledHeight = frameHeight * scale;
-  const duration = frames / fps;
+
+  const handleAnimationEnd = useCallback(() => {
+    if (onComplete) onComplete();
+  }, [onComplete]);
 
   return (
     <div className="pixel-sprite-wrapper">
       <div
-        className="pixel-sprite"
+        className={`pixel-sprite ${playing ? 'pixel-sprite--playing' : ''}`}
+        onAnimationEnd={handleAnimationEnd}
         style={{
           width: `${scaledWidth}px`,
           height: `${scaledHeight}px`,
           backgroundImage: `url(${spriteSheetSrc})`,
           backgroundSize: `${scaledWidth * frames}px ${scaledHeight}px`,
-          animationDuration: `${duration}s`,
-          animationTimingFunction: `steps(${frames})`,
+          '--sprite-duration': `${duration}s`,
+          '--sprite-steps': frames,
         }}
       />
       {label && <span className="pixel-sprite-label">{label}</span>}
