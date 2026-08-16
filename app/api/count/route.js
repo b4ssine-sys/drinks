@@ -95,6 +95,16 @@ async function getCountFromDb() {
   return rows[0]?.count ?? 0;
 }
 
+async function getTodayCountFromDb() {
+  const pool = getPool();
+  if (!pool) return null;
+  await ensureTable(pool);
+  const { rows } = await pool.query(
+    'SELECT COUNT(*)::int AS today FROM drink_click_log WHERE timestamp >= CURRENT_DATE'
+  );
+  return rows[0]?.today ?? 0;
+}
+
 async function incrementInDb(loggedBy) {
   const pool = getPool();
   if (!pool) return null;
@@ -117,11 +127,12 @@ export async function GET(request) {
   try {
     const dbCount = await getCountFromDb();
     if (dbCount !== null) {
+      const todayCount = await getTodayCountFromDb();
       if (wantLog) {
         const entries = await getRecentLogEntries();
-        return NextResponse.json({ count: dbCount, log: entries });
+        return NextResponse.json({ count: dbCount, today: todayCount, log: entries });
       }
-      return NextResponse.json({ count: dbCount });
+      return NextResponse.json({ count: dbCount, today: todayCount });
     }
   } catch (err) {
     console.error('DB GET failed:', err.message);
@@ -130,9 +141,9 @@ export async function GET(request) {
   const count = await readFile();
   if (wantLog) {
     const log = await readClickLog();
-    return NextResponse.json({ count, log });
+    return NextResponse.json({ count, today: count, log });
   }
-  return NextResponse.json({ count });
+  return NextResponse.json({ count, today: count });
 }
 
 async function getRecentLogEntries() {
@@ -164,7 +175,8 @@ export async function POST(request) {
     const dbCount = await incrementInDb(loggedBy);
     if (dbCount !== null) {
       await writeFile(dbCount);
-      return NextResponse.json({ count: dbCount, logged_by: loggedBy });
+      const todayCount = await getTodayCountFromDb();
+      return NextResponse.json({ count: dbCount, today: todayCount, logged_by: loggedBy });
     }
   } catch (err) {
     console.error('DB POST failed:', err.message);
@@ -174,5 +186,5 @@ export async function POST(request) {
   const count = previousCount + 1;
   await writeFile(count);
   await appendClickLog(loggedBy, count);
-  return NextResponse.json({ count, logged_by: loggedBy });
+  return NextResponse.json({ count, today: count, logged_by: loggedBy });
 }
