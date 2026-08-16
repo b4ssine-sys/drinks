@@ -6,23 +6,28 @@ People drink a variety of beverages throughout the day — water, coffee, tea, j
 
 ## Design Goals
 
-1. **Ultra-lightweight** — minimal footprint, no framework bloat, fast to load and fast to use.
-2. **Zero external dependencies** — the core platform must function without third-party services, APIs, or package ecosystems. Everything needed ships with the platform itself.
-3. **Iterative by design** — start with the smallest useful version and layer capabilities on top without rewriting what came before. Each iteration is independently deployable and complete.
-4. **Offline-first** — all data stays local. No account creation, no cloud sync required. The user owns their data from day one.
+1. **Ultra-lightweight** — a single HTML file with inline CSS and JavaScript. No frameworks, no bundlers, no node_modules.
+2. **Zero external dependencies** — everything the app needs is self-contained in one file. No CDN links, no third-party scripts, no API calls.
+3. **Iterative by design** — start with the smallest useful version and layer capabilities on top without rewriting what came before. Each iteration is independently deployable.
+4. **Free to host** — deployable on GitHub Pages, Netlify, Cloudflare Pages, or any static hosting service at zero cost. No server, no database, no backend.
+5. **Offline-capable** — all data lives in the browser's `localStorage`. The app works without an internet connection after the first load.
 
-## Architecture Principles
+## Platform Architecture
 
-### Decoupled Modules
+### Single HTML File
 
-The platform is organized as independent, self-contained modules that communicate through plain data structures (JSON). No module imports another module directly. This means:
+The entire application is one `index.html` file. CSS is inlined in a `<style>` block. JavaScript is inlined in a `<script>` block. There is nothing to install, nothing to build, and nothing to configure. Deploying the app means pushing one file to a static host.
 
-- The **input module** captures what the user drank and when.
-- The **storage module** persists entries to a local store.
-- The **display module** reads the store and renders views.
-- The **export module** transforms stored data into portable formats.
+### Decoupled Internal Modules
 
-Each module can be replaced, rewritten in a different language, or removed without affecting the others. The contract between them is the data shape, not the implementation.
+Inside the single file, the JavaScript is organized as independent modules that communicate through plain data structures. No module calls into another directly. This means:
+
+- The **input module** captures what the user drank and when via a form.
+- The **storage module** persists entries to `localStorage` as JSON.
+- The **display module** reads the store and renders the log and summaries.
+- The **export module** transforms stored data into downloadable formats.
+
+Each module can be rewritten without affecting the others. The contract between them is the data shape, not the implementation.
 
 ### Data Shape
 
@@ -39,83 +44,93 @@ Every beverage entry is a flat JSON object:
 }
 ```
 
-No nested structures. No relational joins. One entry, one object. The entire day's data is a JSON array of these objects stored in a single file named by date (`2026-08-16.json`).
+No nested structures. No relational joins. One entry, one object. The entire dataset is a JSON array of these objects stored under a single `localStorage` key.
+
+### Hosting Strategy
+
+The app is a static file. Any free static hosting service works:
+
+| Service | How to Deploy | Custom Domain |
+|---|---|---|
+| **GitHub Pages** | Push `index.html` to a repo, enable Pages in settings | Yes (free) |
+| **Netlify** | Drag and drop the file, or connect a Git repo | Yes (free) |
+| **Cloudflare Pages** | Connect a Git repo | Yes (free) |
+| **Surge.sh** | `surge ./` from the command line | Yes (free) |
+
+GitHub Pages is the default choice since the source code already lives on GitHub. Enabling it is a single toggle in repository settings.
 
 ## Iteration Plan
 
-### Iteration 0 — CLI Logger
+### Iteration 0 — Log a Drink
 
-The smallest useful version. A single-file script (Bash, Python, or any language already on the user's machine) that:
+The smallest useful version. A single `index.html` file that:
 
-- Accepts a beverage name and optional volume from the command line.
-- Appends a timestamped JSON entry to today's date file.
-- Prints a summary of today's entries when run with no arguments.
+- Shows a form with a beverage name, volume, and optional tags.
+- Saves each entry to `localStorage` with a timestamp.
+- Displays today's log as a simple list below the form.
+- Works on mobile and desktop.
 
-No install step. No config file. Copy the script, run it.
+No install step. No config. Open the page, log a drink.
 
-**Done when:** a user can log "coffee 350ml" and see their day's log.
+**Done when:** a user can log "coffee 350ml" and see their day's entries.
 
 ### Iteration 1 — Daily Summary
 
-Add a read-only summary view:
+Add a summary card above the log:
 
-- Total volume consumed.
+- Total volume consumed today.
 - Beverage frequency count (e.g., "coffee x3, water x5").
-- Hydration estimate (flag days below a configurable water threshold).
+- Hydration indicator (flag if water intake is below a threshold).
 
-This is a separate script that reads the same date files. It does not modify the logger.
+**Done when:** a user can glance at their daily intake in one view.
 
-**Done when:** a user can review yesterday's intake in one glance.
+### Iteration 2 — History and Navigation
 
-### Iteration 2 — Simple Web View
+Add the ability to view past days:
 
-A single static HTML file with inline CSS and JavaScript. No build step, no bundler, no node_modules.
+- Date picker or arrow navigation to browse previous days.
+- Entries grouped by date.
+- Delete or edit individual entries.
 
-- Opens the current day's JSON file (via File API or drag-and-drop).
-- Renders the log as a list and the summary as a card.
-- Allows adding new entries through a minimal form that downloads the updated file.
+**Done when:** a user can review what they drank last Tuesday.
 
-**Done when:** a non-technical user can track beverages by opening one HTML file in a browser.
+### Iteration 3 — Trends and Patterns
 
-### Iteration 3 — Local Persistence
+Add a trends view using inline SVG or canvas (no charting library):
 
-Replace file-per-day storage with browser `localStorage` or `IndexedDB` so the web view no longer requires manual file handling.
-
-- Migration path: import existing JSON date files.
-- Export button to download all data as a single JSON archive.
-
-The CLI logger continues to work independently using flat files. Both are valid entry points.
-
-**Done when:** the web version works without any file management.
-
-### Iteration 4 — Trends and Patterns
-
-Add a trends page (still a single HTML file, still no dependencies):
-
-- Weekly and monthly volume charts rendered with inline SVG or canvas.
+- Weekly and monthly volume charts.
 - Most-consumed beverages over time.
 - Caffeine and hydration streaks.
 
 **Done when:** a user can see whether they're drinking more water this month than last.
 
-### Iteration 5 — Optional Sync (Opt-In)
+### Iteration 4 — Data Portability
 
-For users who want multi-device access, introduce an optional sync layer:
+Add import and export capabilities:
 
-- Data encrypted client-side before leaving the device.
-- Sync target is configurable: a personal server, a cloud storage folder, or a Git repository.
-- The platform works identically with sync disabled.
+- Export all data as a single JSON file download.
+- Import a previously exported JSON file to restore or migrate data.
+- Clear all data with a confirmation step.
 
-This is the first iteration that touches the network. Everything before it is fully offline.
+**Done when:** a user can move their data to a new browser or device.
 
-**Done when:** a user can see the same log on their phone and laptop without compromising the offline-first guarantee.
+### Iteration 5 — Progressive Web App
+
+Make the app installable and fully offline:
+
+- Add a service worker for offline caching (inlined in the same HTML file or as a minimal second file).
+- Add a web app manifest so the app can be installed to the home screen.
+- The app loads and functions with no network connection.
+
+**Done when:** a user can tap an icon on their phone's home screen and log a drink with airplane mode on.
 
 ## What This Platform Is Not
 
 - **Not a calorie tracker.** It does not estimate nutritional content.
 - **Not a social app.** There are no profiles, leaderboards, or sharing features.
-- **Not a subscription service.** There is no server to pay for in the default configuration.
+- **Not a subscription service.** There is no server to pay for.
+- **Not a native app.** It runs in the browser. That is a feature, not a limitation.
 
 ## Summary
 
-The platform starts as a script you can run in a terminal and grows into a portable web app — without ever requiring a package manager, a framework, or an account. Each iteration stands on its own. Each module is replaceable. The data format is simple enough to read in a text editor. That is the point.
+The platform is one HTML file. It costs nothing to host. It requires nothing to build. Data stays in the user's browser. Each iteration adds a layer without rewriting what came before. Ship `index.html`, open a browser, log a drink.
