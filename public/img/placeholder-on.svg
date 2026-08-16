@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" rx="16" fill="#12122a"/>
+  <circle cx="200" cy="160" r="60" fill="none" stroke="#00e5cc" stroke-width="3"/>
+  <path d="M175 140 L200 120 L225 140" fill="none" stroke="#00e5cc" stroke-width="3" stroke-linecap="round"/>
+  <rect x="170" y="140" width="60" height="50" rx="4" fill="none" stroke="#00e5cc" stroke-width="3"/>
+  <path d="M230 155 Q250 155 250 170 Q250 185 230 185" fill="none" stroke="#00e5cc" stroke-width="3"/>
+  <text x="200" y="270" text-anchor="middle" font-family="monospace" font-size="18" fill="#00e5cc">DRINKING</text>
+  <text x="200" y="300" text-anchor="middle" font-family="monospace" font-size="12" fill="#8a7fa8">state: ON</text>
+</svg>
