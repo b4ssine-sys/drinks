@@ -11,7 +11,7 @@ export default function Screen({ playing, onAnimationComplete }) {
         spriteSheetSrc={SPRITE_SHEET}
         frameWidth={64}
         frameHeight={100}
-        frames={2}
+        frames={5}
         duration={0.4}
         scale={3}
         playing={playing}
