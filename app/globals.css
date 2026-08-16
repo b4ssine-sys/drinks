@@ -68,8 +68,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-evenly;
 }
 
 .section-bottom {
@@ -213,10 +212,10 @@ html, body {
 
 .drink-counter {
   font-family: var(--font-pixel);
-  font-size: clamp(18px, 5vw, 32px);
-  letter-spacing: 4px;
+  font-size: clamp(54px, 15vw, 96px);
+  letter-spacing: 6px;
   color: var(--gold);
-  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 16px rgba(255, 215, 0, 0.5);
 }
 
 /* --- Pixel Sprite --- */
