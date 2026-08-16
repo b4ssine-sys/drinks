@@ -46,11 +46,8 @@ export default function Home() {
   }, [identityInput]);
 
   const handleClick = useCallback(() => {
-    if (!playing) setPlaying(true);
-  }, [playing]);
-
-  const handleAnimationComplete = useCallback(() => {
-    setPlaying(false);
+    if (playing) return;
+    setPlaying(true);
     const actor = loggedBy || 'unknown';
     setCount((c) => c + 1);
     setTodayCount((c) => c + 1);
@@ -65,7 +62,11 @@ export default function Home() {
         if (data.today != null) setTodayCount(data.today);
       })
       .catch(() => {});
-  }, [loggedBy]);
+  }, [playing, loggedBy]);
+
+  const handleAnimationComplete = useCallback(() => {
+    setPlaying(false);
+  }, []);
 
   return (
     <div className="container">

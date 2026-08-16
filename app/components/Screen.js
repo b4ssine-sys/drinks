@@ -19,9 +19,15 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
         </div>
 
         <div className="center-visual">
-          <div className="drink-badge" aria-label="Drink icon">
-            <img src="/img/drink-full.svg" alt="Drink" />
-          </div>
+          <PixelSprite
+            spriteSheetSrc="/img/drink-sprite.svg"
+            frameWidth={64}
+            frameHeight={100}
+            frames={5}
+            duration={1}
+            scale={2}
+            playing={playing}
+          />
           <PixelSprite
             spriteSheetSrc="/img/running.png"
             frameWidth={64}

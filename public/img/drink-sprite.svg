@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" shape-rendering="crispEdges">
 
   <!-- Frame 1: 100% full (x=0) -->
-  <rect x="0" width="64" height="100" fill="#13132d"/>
   <rect x="16" y="22" width="32" height="58" fill="#d4873a" stroke="#8ab4d6" stroke-width="2"/>
   <rect x="14" y="18" width="36" height="4" fill="#8ab4d6"/>
   <rect x="18" y="80" width="28" height="4" fill="#8ab4d6"/>
@@ -13,7 +12,6 @@
   <rect x="20" y="28" width="3" height="20" fill="rgba(255,255,255,0.15)"/>
 
   <!-- Frame 2: 75% full (x=64) -->
-  <rect x="64" width="64" height="100" fill="#13132d"/>
   <rect x="80" y="22" width="32" height="58" fill="rgba(138,180,214,0.15)" stroke="#8ab4d6" stroke-width="2"/>
   <rect x="80" y="37" width="32" height="43" fill="#d4873a"/>
   <rect x="78" y="18" width="36" height="4" fill="#8ab4d6"/>
@@ -25,7 +23,6 @@
   <rect x="84" y="40" width="3" height="16" fill="rgba(255,255,255,0.15)"/>
 
   <!-- Frame 3: 50% full (x=128) -->
-  <rect x="128" width="64" height="100" fill="#13132d"/>
   <rect x="144" y="22" width="32" height="58" fill="rgba(138,180,214,0.15)" stroke="#8ab4d6" stroke-width="2"/>
   <rect x="144" y="51" width="32" height="29" fill="#d4873a"/>
   <rect x="142" y="18" width="36" height="4" fill="#8ab4d6"/>
@@ -36,7 +33,6 @@
   <rect x="148" y="54" width="3" height="10" fill="rgba(255,255,255,0.15)"/>
 
   <!-- Frame 4: 25% full (x=192) -->
-  <rect x="192" width="64" height="100" fill="#13132d"/>
   <rect x="208" y="22" width="32" height="58" fill="rgba(138,180,214,0.15)" stroke="#8ab4d6" stroke-width="2"/>
   <rect x="208" y="65" width="32" height="15" fill="#d4873a"/>
   <rect x="206" y="18" width="36" height="4" fill="#8ab4d6"/>
@@ -46,7 +42,6 @@
   <circle cx="236" cy="20" r="6" fill="#eec44a" stroke="#cc9922" stroke-width="1"/>
 
   <!-- Frame 5: Empty (x=256) -->
-  <rect x="256" width="64" height="100" fill="#13132d"/>
   <rect x="272" y="22" width="32" height="58" fill="rgba(138,180,214,0.15)" stroke="#6b8a9e" stroke-width="2"/>
   <rect x="270" y="18" width="36" height="4" fill="#6b8a9e"/>
   <rect x="274" y="80" width="28" height="4" fill="#6b8a9e"/>
