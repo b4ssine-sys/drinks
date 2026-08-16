@@ -56,12 +56,13 @@ html, body {
   border-color: var(--pink);
   border-image: linear-gradient(90deg, var(--pink), var(--teal)) 1;
   background:
-    linear-gradient(180deg, rgba(45, 27, 78, 0.4) 0%, transparent 60%),
-    var(--bg-dark);
+    linear-gradient(180deg, rgba(12, 16, 25, 0.72), rgba(12, 16, 25, 0.18)),
+    url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png') center/cover no-repeat;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
+  position: relative;
 }
 
 .section-bottom {
@@ -197,23 +198,93 @@ html, body {
 /* --- Screen --- */
 
 .screen {
-  width: 90%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-row {
+  width: min(100%, 640px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 3vw, 34px);
+  flex-wrap: nowrap;
+}
+
+.center-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 150px;
+  padding-top: 0;
+}
+
+.drink-badge {
+  width: 104px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.drink-badge img {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+}
+
+.pixel-sprite-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  overflow: visible;
+}
+
+.pixel-sprite {
+  image-rendering: pixelated;
+  background-position-x: 0;
+  background-position: center center;
+  overflow: visible;
+  display: block;
+  margin: 0 auto;
+  transform: translateY(0);
+  filter: drop-shadow(0 0 12px rgba(0, 229, 204, 0.4));
+}
+
+.pixel-sprite-label {
+  margin: 0 0 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--teal);
+  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
 }
 
 /* --- Counter --- */
 
-.total-counter-panel {
+.counter-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   text-align: center;
+  min-width: 110px;
+  flex: 1 1 0;
 }
 
-.total-label {
+.counter-label {
   font-family: var(--font-pixel);
   font-size: 12px;
   letter-spacing: 4px;
@@ -223,10 +294,11 @@ html, body {
 
 .drink-counter {
   font-family: var(--font-pixel);
-  font-size: clamp(54px, 15vw, 96px);
-  letter-spacing: 6px;
+  font-size: clamp(32px, 8vw, 64px);
+  letter-spacing: 3px;
   color: var(--gold);
   text-shadow: 0 0 16px rgba(255, 215, 0, 0.5);
+  line-height: 1;
 }
 
 /* --- Pixel Sprite --- */
@@ -236,31 +308,8 @@ html, body {
   to { background-position-x: var(--sprite-end-x); }
 }
 
-.pixel-sprite-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  user-select: none;
-}
-
-.pixel-sprite {
-  image-rendering: pixelated;
-  background-position-x: 0;
-  overflow: hidden;
-}
-
 .pixel-sprite--playing {
   animation: pixel-step var(--sprite-duration, 0.4s) steps(var(--sprite-steps, 2)) 1 forwards;
-}
-
-.pixel-sprite-label {
-  margin-top: 8px;
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--teal);
-  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
 }
 
 /* --- Circle button --- */

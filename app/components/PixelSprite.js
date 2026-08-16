@@ -22,6 +22,7 @@ export default function PixelSprite({
 
   return (
     <div className="pixel-sprite-wrapper">
+      {label && <span className="pixel-sprite-label">{label}</span>}
       <div
         className={`pixel-sprite ${playing ? 'pixel-sprite--playing' : ''}`}
         onAnimationEnd={handleAnimationEnd}
@@ -30,12 +31,13 @@ export default function PixelSprite({
           height: `${scaledHeight}px`,
           backgroundImage: `url(${spriteSheetSrc})`,
           backgroundSize: `${scaledWidth * frames}px ${scaledHeight}px`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: '0 0',
           '--sprite-duration': `${duration}s`,
           '--sprite-steps': frames,
-          '--sprite-end-x': `-${scaledWidth * frames}px`,
+          '--sprite-end-x': `-${(frames - 1) * scaledWidth}px`,
         }}
       />
-      {label && <span className="pixel-sprite-label">{label}</span>}
     </div>
   );
 }

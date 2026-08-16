@@ -2,8 +2,6 @@
 
 import PixelSprite from './PixelSprite';
 
-const SPRITE_SHEET = '/img/drink-sprite.svg';
-
 export default function Screen({ playing, onAnimationComplete, count }) {
   const today = new Date().toLocaleDateString('en-US', {
     month: 'numeric',
@@ -14,22 +12,33 @@ export default function Screen({ playing, onAnimationComplete, count }) {
   return (
     <>
       <h1 className="title">{today} JAYS BEV COUNT</h1>
-      <div className="screen">
-        <PixelSprite
-          spriteSheetSrc={SPRITE_SHEET}
-          frameWidth={64}
-          frameHeight={100}
-          frames={5}
-          duration={0.8}
-          scale={3}
-          playing={playing}
-          onComplete={onAnimationComplete}
-          label={playing ? 'DRINKING...' : 'READY'}
-        />
-      </div>
-      <div className="total-counter-panel" aria-label="Total drink counter">
-        <span className="total-label">TOTAL</span>
-        <span className="drink-counter">{count}</span>
+      <div className="hero-row">
+        <div className="counter-panel" aria-label="Today's drink counter">
+          <span className="counter-label">TODAY</span>
+          <span className="drink-counter">{count}</span>
+        </div>
+
+        <div className="center-visual">
+          <div className="drink-badge" aria-label="Drink icon">
+            <img src="/img/drink-full.svg" alt="Drink" />
+          </div>
+          <PixelSprite
+            spriteSheetSrc="/img/running.png"
+            frameWidth={64}
+            frameHeight={64}
+            frames={4}
+            duration={0.7}
+            scale={2.4}
+            playing={playing}
+            onComplete={onAnimationComplete}
+            label={playing ? 'RUNNING...' : 'READY'}
+          />
+        </div>
+
+        <div className="counter-panel" aria-label="Total drink counter">
+          <span className="counter-label">TOTAL</span>
+          <span className="drink-counter">{count}</span>
+        </div>
       </div>
     </>
   );

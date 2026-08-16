@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
+import path from 'path';
 
-const COUNTER_FILE = '/tmp/drink-count.json';
+const DATA_DIR = path.join(process.cwd(), '.data');
+const COUNTER_FILE = path.join(DATA_DIR, 'drink-count.json');
+const CLICK_LOG_FILE = path.join(DATA_DIR, 'drink-click-log.json');
+
+async function ensureDataDir() {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+}
 
 let pgPool = null;
 let tableReady = false;
@@ -29,6 +36,14 @@ async function ensureTable(pool) {
       )
     `);
     await pool.query(`INSERT INTO drink_counter (id, count) VALUES (1, 0) ON CONFLICT DO NOTHING`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS drink_click_log (
+        id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+        logged_by TEXT NOT NULL,
+        count     INTEGER NOT NULL
+      )
+    `);
     tableReady = true;
   }
 }
@@ -44,7 +59,31 @@ async function readFile() {
 
 async function writeFile(count) {
   try {
+    await ensureDataDir();
     await fs.writeFile(COUNTER_FILE, JSON.stringify({ count }));
+  } catch {}
+}
+
+async function readClickLog() {
+  try {
+    await ensureDataDir();
+    const data = await fs.readFile(CLICK_LOG_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+async function appendClickLog(loggedBy, count) {
+  try {
+    await ensureDataDir();
+    const current = await readClickLog();
+    const entry = {
+      timestamp: new Date().toISOString(),
+      logged_by: loggedBy,
+      count,
+    };
+    await fs.writeFile(CLICK_LOG_FILE, JSON.stringify([...current, entry]));
   } catch {}
 }
 
@@ -56,38 +95,84 @@ async function getCountFromDb() {
   return rows[0]?.count ?? 0;
 }
 
-async function incrementInDb() {
+async function incrementInDb(loggedBy) {
   const pool = getPool();
   if (!pool) return null;
   await ensureTable(pool);
   const { rows } = await pool.query(
     'UPDATE drink_counter SET count = count + 1 WHERE id = 1 RETURNING count'
   );
-  return rows[0].count;
+  const count = rows[0].count;
+  await pool.query(
+    'INSERT INTO drink_click_log (logged_by, count) VALUES ($1, $2)',
+    [loggedBy || 'unknown', count]
+  );
+  return count;
 }
 
-export async function GET() {
+export async function GET(request) {
+  const url = new URL(request.url);
+  const wantLog = url.searchParams.get('logs') === '1';
+
   try {
     const dbCount = await getCountFromDb();
-    if (dbCount !== null) return NextResponse.json({ count: dbCount });
+    if (dbCount !== null) {
+      if (wantLog) {
+        const entries = await getRecentLogEntries();
+        return NextResponse.json({ count: dbCount, log: entries });
+      }
+      return NextResponse.json({ count: dbCount });
+    }
   } catch (err) {
     console.error('DB GET failed:', err.message);
   }
+
   const count = await readFile();
+  if (wantLog) {
+    const log = await readClickLog();
+    return NextResponse.json({ count, log });
+  }
   return NextResponse.json({ count });
 }
 
-export async function POST() {
+async function getRecentLogEntries() {
+  const pool = getPool();
+  if (!pool) return [];
   try {
-    const dbCount = await incrementInDb();
+    await ensureTable(pool);
+    const { rows } = await pool.query(
+      'SELECT logged_by, count, timestamp FROM drink_click_log ORDER BY timestamp DESC LIMIT 50'
+    );
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+export async function POST(request) {
+  let body = {};
+  let loggedBy = 'unknown';
+
+  try {
+    body = await request.json().catch(() => ({}));
+    loggedBy = String(body.logged_by || 'unknown').trim() || 'unknown';
+  } catch {
+    loggedBy = 'unknown';
+  }
+
+  try {
+    const dbCount = await incrementInDb(loggedBy);
     if (dbCount !== null) {
       await writeFile(dbCount);
-      return NextResponse.json({ count: dbCount });
+      return NextResponse.json({ count: dbCount, logged_by: loggedBy });
     }
   } catch (err) {
     console.error('DB POST failed:', err.message);
   }
-  const count = (await readFile()) + 1;
+
+  const previousCount = await readFile();
+  const count = previousCount + 1;
   await writeFile(count);
-  return NextResponse.json({ count });
+  await appendClickLog(loggedBy, count);
+  return NextResponse.json({ count, logged_by: loggedBy });
 }

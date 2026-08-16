@@ -13,14 +13,14 @@ export default function Home() {
   const [identityInput, setIdentityInput] = useState('');
   const [needsIdentity, setNeedsIdentity] = useState(false);
 
-  useEffect(() => {
-    const refreshCount = () => {
-      fetch('/api/count')
-        .then((r) => { if (r.ok) return r.json(); throw new Error(); })
-        .then((data) => setCount(data.count))
-        .catch(() => {});
-    };
+  const refreshCount = useCallback(() => {
+    fetch('/api/count')
+      .then((r) => { if (r.ok) return r.json(); throw new Error(); })
+      .then((data) => setCount(data.count))
+      .catch(() => {});
+  }, []);
 
+  useEffect(() => {
     refreshCount();
 
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -29,10 +29,7 @@ export default function Home() {
     } else {
       setNeedsIdentity(true);
     }
-
-    const intervalId = window.setInterval(refreshCount, 10000);
-    return () => window.clearInterval(intervalId);
-  }, []);
+  }, [refreshCount]);
 
   const saveIdentity = useCallback(() => {
     const value = (identityInput || '').trim() || 'unknown';
@@ -55,9 +52,12 @@ export default function Home() {
       body: JSON.stringify({ logged_by: actor }),
     })
       .then((r) => { if (r.ok) return r.json(); throw new Error(); })
-      .then((data) => setCount(data.count))
+      .then((data) => {
+        setCount(data.count);
+        window.setTimeout(() => refreshCount(), 4000);
+      })
       .catch(() => {});
-  }, [loggedBy]);
+  }, [loggedBy, refreshCount]);
 
   return (
     <div className="container">
