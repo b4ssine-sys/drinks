@@ -92,7 +92,7 @@ html, body {
 
 .title {
   font-family: var(--font-pixel);
-  font-size: clamp(14px, 4vw, 24px);
+  font-size: clamp(21px, 6vw, 36px);
   text-align: center;
   letter-spacing: 4px;
   margin-bottom: 4px;
