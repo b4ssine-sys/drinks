@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+const db = require('@/lib/db');
 
-// GET /api/drinks/today
 export async function GET() {
-  // TODO: fetch today's drinks from db
-  return NextResponse.json([]);
+  try {
+    const drinks = await db.getTodayDrinks();
+    return NextResponse.json(drinks);
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

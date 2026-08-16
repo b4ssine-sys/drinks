@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+const db = require('@/lib/db');
 
-// DELETE /api/people/:id
 export async function DELETE(request, { params }) {
-  // TODO: remove person by params.id
-  // const { id } = await params;
-  return NextResponse.json({ ok: true });
+  try {
+    const { id } = await params;
+    await db.removePerson(id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
