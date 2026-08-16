@@ -6,6 +6,7 @@ import CircleButton from './components/CircleButton';
 
 export default function Home() {
   const [playing, setPlaying] = useState(false);
+  const [count, setCount] = useState(0);
 
   const handleClick = useCallback(() => {
     if (!playing) setPlaying(true);
@@ -13,12 +14,13 @@ export default function Home() {
 
   const handleAnimationComplete = useCallback(() => {
     setPlaying(false);
+    setCount((c) => c + 1);
   }, []);
 
   return (
     <div className="container">
       <div className="section section-top">
-        <Screen playing={playing} onAnimationComplete={handleAnimationComplete} />
+        <Screen playing={playing} onAnimationComplete={handleAnimationComplete} count={count} />
       </div>
 
       <hr className="divider" />
