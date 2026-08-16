@@ -1,14 +1,21 @@
 'use client';
 
-const PLACEHOLDER_ON = '/img/placeholder-on.svg';
-const PLACEHOLDER_OFF = '/img/placeholder-off.svg';
+import PixelSprite from './PixelSprite';
+
+const SPRITE_FULL = '/img/drink-full.svg';
+const SPRITE_EMPTY = '/img/drink-empty.svg';
 
 export default function Screen({ drinkState }) {
-  const src = drinkState ? PLACEHOLDER_ON : PLACEHOLDER_OFF;
-
   return (
     <div className="screen">
-      <img className="screen-img" src={src} alt={drinkState ? 'Drinking' : 'Not drinking'} />
+      <PixelSprite
+        spriteSheetSrc={drinkState ? SPRITE_FULL : SPRITE_EMPTY}
+        frameWidth={64}
+        frameHeight={100}
+        frames={1}
+        scale={3}
+        label={drinkState ? 'DRINKING' : 'EMPTY'}
+      />
     </div>
   );
 }

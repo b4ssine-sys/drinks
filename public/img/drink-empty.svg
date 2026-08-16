@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 100" shape-rendering="crispEdges">
+  <rect width="64" height="100" fill="#13132d"/>
+  <!-- Glass body -->
+  <rect x="18" y="20" width="28" height="60" fill="rgba(138,180,214,0.15)" stroke="#6b8a9e" stroke-width="2"/>
+  <!-- Glass rim -->
+  <rect x="16" y="18" width="32" height="4" fill="#6b8a9e"/>
+  <!-- Glass base -->
+  <rect x="20" y="80" width="24" height="4" fill="#6b8a9e"/>
+  <!-- Water droplets -->
+  <rect x="24" y="40" width="2" height="3" fill="rgba(255,255,255,0.3)"/>
+  <rect x="36" y="52" width="2" height="3" fill="rgba(255,255,255,0.3)"/>
+  <rect x="30" y="62" width="2" height="3" fill="rgba(255,255,255,0.3)"/>
+  <!-- Highlight -->
+  <rect x="22" y="28" width="3" height="20" fill="rgba(255,255,255,0.1)"/>
+</svg>
