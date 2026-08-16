@@ -6,12 +6,12 @@ In shared workspaces, people notice their coworkers' drink habits — the daily 
 
 ## Design Goals
 
-1. **Ultra-lightweight** — a single HTML file with inline CSS and JavaScript. No frameworks, no bundlers, no node_modules.
-2. **Zero external dependencies** — everything the app needs is self-contained. No CDN links, no third-party scripts.
+1. **Ultra-lightweight** — minimal dependencies, fast to start, fast to use. No heavyweight frameworks.
+2. **Node.js full stack** — Node.js serves the frontend, runs the backend, and hosts the application. One runtime, one language, one deployment target.
 3. **Iterative by design** — start with the smallest useful version and layer capabilities on top without rewriting what came before. Each iteration is independently deployable.
-4. **Free to host** — deployable on GitHub Pages, Netlify, Cloudflare Pages, or any static hosting service at zero cost. No server, no database, no backend.
+4. **Free to host** — deployable on free-tier Node.js hosting services at zero cost.
 5. **Multi-user, shared access** — multiple people open the same site and can log drinks for anyone in the group. This is a communal board, not a personal diary.
-6. **UI separated from logic** — presentation code and business logic are cleanly decoupled so either layer can be changed independently.
+6. **UI separated from logic** — presentation code and business logic live in separate layers so either can be changed independently.
 
 ## Core Concept
 
@@ -46,24 +46,68 @@ The visual identity blends two aesthetics:
 
 The result is a neon-soaked, tile-based dashboard that feels like a Tokyo arcade machine designed by a Miami Beach nightclub. Dark background, glowing cards, pixel accents, gradient edges. Playful but legible. Retro but responsive.
 
+## Technology Stack
+
+### Runtime: Node.js
+
+Node.js is the single runtime for the entire application. It serves the frontend, handles API requests, and manages data persistence. No separate web server, no separate backend language.
+
+### Backend: Express.js (Node.js)
+
+A lightweight Express server provides:
+
+- **Static file serving** — serves the HTML, CSS, and JavaScript frontend.
+- **REST API** — endpoints for logging drinks, querying counts, and managing people.
+- **In-memory + file persistence** — data stored in a JSON file on disk, loaded into memory on startup. No database required.
+- **WebSocket support** — real-time updates pushed to all connected browsers via `ws` or Socket.io.
+
+### Frontend: Vanilla HTML/CSS/JS
+
+The frontend is plain HTML, CSS, and JavaScript served by the Node.js backend. No React, no Vue, no build step. The browser loads static files and communicates with the backend over REST and WebSocket.
+
+### Project Structure
+
+```
+drinks/
+  server.js          — Express server, API routes, WebSocket setup
+  lib/
+    logic.js         — pure business logic (no Express, no DOM)
+    store.js         — data persistence (read/write JSON file)
+  public/
+    index.html       — main page markup
+    css/
+      style.css      — retro Tokyo x Miami Vice theme
+    js/
+      app.js         — UI rendering and event handling
+      api.js         — fetch wrapper for backend communication
+  data/
+    drinks.json      — persistent data file (auto-created)
+  package.json
+```
+
 ## Architecture
 
 ### Separation of UI and Logic
 
-The codebase enforces a strict boundary between presentation and business logic:
+The codebase enforces a strict boundary between three layers:
 
-**Logic Layer** — pure functions with no DOM access:
-- `createEntry(personId, beverage)` — builds a drink entry object.
-- `addEntry(store, entry)` — appends an entry to the data store and returns the new state.
-- `getDailySummary(store, date)` — computes drink counts and totals for a given day.
-- `getPersonSummary(store, personId, date)` — returns one person's daily tally.
+**Logic Layer** (`lib/logic.js`) — pure functions with no side effects:
+- `createEntry(personId, beverage, loggedBy)` — builds a drink entry object.
+- `addEntry(entries, entry)` — returns a new array with the entry appended.
+- `getDailySummary(entries, date)` — computes drink counts and totals for a given day.
+- `getPersonSummary(entries, personId, date)` — returns one person's daily tally.
 
-**UI Layer** — reads state from the logic layer and renders to the DOM:
+**Server Layer** (`server.js`, `lib/store.js`) — handles HTTP, WebSocket, and persistence:
+- Receives API requests and delegates to the logic layer.
+- Persists state to a JSON file on disk.
+- Broadcasts updates to all connected clients via WebSocket.
+
+**UI Layer** (`public/js/app.js`, `public/css/style.css`) — renders state to the DOM:
 - Renders person cards with drink counts.
-- Handles tap/click events and calls into the logic layer.
-- Updates the display when state changes.
+- Handles tap/click events and sends requests to the API.
+- Listens for WebSocket messages to update the display in real time.
 
-The logic layer can be tested without a browser. The UI layer can be reskinned without touching the counting logic.
+The logic layer can be tested with plain Node.js — no browser, no server. The UI layer can be reskinned without touching the counting logic. The server layer can swap its persistence backend without affecting either.
 
 ### Data Shape
 
@@ -79,41 +123,40 @@ Every drink event is a flat JSON object:
 }
 ```
 
-No volume tracking, no calories, no nutritional data. Just who drank what, when, and who saw it. The dataset is a JSON array stored in `localStorage` under a single key.
+No volume tracking, no calories, no nutritional data. Just who drank what, when, and who saw it.
 
 ### Multi-User Access
 
-In early iterations, each browser holds its own copy of the data in `localStorage`. Users on different devices see their own logs. This is acceptable for a small group in the same room — one person is the designated logger, or a shared tablet sits on a desk.
-
-In later iterations, shared state is introduced so all browsers see the same counts in real time.
+Because the Node.js server is the single source of truth, all connected browsers see the same data from the start. When one user logs a drink, the server persists it and broadcasts the update over WebSocket to every open client. No polling, no manual refresh.
 
 ### Hosting Strategy
 
-The app is a static file. Any free static hosting service works:
+The app is a Node.js process. Any free-tier Node.js hosting service works:
 
-| Service | How to Deploy | Custom Domain |
+| Service | How to Deploy | Always On (Free Tier) |
 |---|---|---|
-| **GitHub Pages** | Push `index.html` to a repo, enable Pages in settings | Yes (free) |
-| **Netlify** | Drag and drop the file, or connect a Git repo | Yes (free) |
-| **Cloudflare Pages** | Connect a Git repo | Yes (free) |
-| **Surge.sh** | `surge ./` from the command line | Yes (free) |
+| **Render** | Connect a Git repo, set start command to `node server.js` | Spins down after inactivity, wakes on request |
+| **Railway** | Connect a Git repo, auto-detects Node.js | 500 hours/month free |
+| **Glitch** | Import from GitHub or edit in browser | Sleeps after 5 min inactivity |
+| **Fly.io** | `fly launch` from the command line | 3 shared VMs free |
+| **Cyclic** | Connect a Git repo | Serverless, scales to zero |
 
-GitHub Pages is the default choice since the source code already lives on GitHub.
+For always-on behavior on a free tier, Render or Railway are the strongest options. Glitch is good for quick demos and collaborative editing.
 
 ## Iteration Plan
 
 ### Iteration 0 — Tap to Count
 
-The smallest useful version. A single `index.html` file that:
+The smallest useful version. A Node.js server that:
 
-- Displays a card for each person in the group.
+- Serves a single page with a card for each person in the group.
 - Each card has a button to log a drink (defaults to a generic "drink").
-- Tapping the button increments that person's daily count.
+- Tapping the button sends a POST to the API, which persists the entry and broadcasts the update.
+- All connected browsers see the count update in real time via WebSocket.
 - The count resets visually each day.
-- Data persists in `localStorage`.
 - Styled with the retro Tokyo x Miami Vice theme from day one.
 
-**Done when:** you can tap a coworker's card and see their drink count go up.
+**Done when:** you tap a coworker's card on your phone and your coworker sees the count go up on their laptop.
 
 ### Iteration 1 — Beverage Selection
 
@@ -121,7 +164,7 @@ Add drink-specific logging:
 
 - Tapping a person's card opens a beverage picker (refresher, coffee, tea, water, soda, etc.).
 - Each beverage has its own count on the card.
-- Users can add custom beverages.
+- Users can add custom beverages via the UI.
 
 **Done when:** Sarah's card shows "Refresher x3, Coffee x1."
 
@@ -129,7 +172,8 @@ Add drink-specific logging:
 
 Add the ability to look back:
 
-- View previous days' counts.
+- API endpoints for querying historical data by date range.
+- View previous days' counts in the UI.
 - Simple inline charts (SVG or canvas, no library) showing drink frequency over time.
 - "Most consumed" and "streak" indicators per person.
 
@@ -139,40 +183,39 @@ Add the ability to look back:
 
 Add the ability to manage the group:
 
-- Add or remove people from the board.
+- API endpoints for adding, removing, and updating people.
 - Each person can have a display name and avatar (emoji or initials).
 - Configurable beverage presets per person (Sarah's default is "Refresher," Mike's is "Cold Brew").
 
 **Done when:** a new coworker joins the team and can be added to the board in seconds.
 
-### Iteration 4 — Shared State
+### Iteration 4 — Persistent Database
 
-Make the board truly multi-user:
+Replace the JSON file with a lightweight database:
 
-- All browsers see the same counts in real time.
-- Use a lightweight free backend (Firebase Realtime Database free tier, or Supabase free tier) to sync state.
-- Fallback to `localStorage` if the sync service is unavailable.
-- The app still works offline; it syncs when reconnected.
+- SQLite via `better-sqlite3` for zero-config, file-based persistence.
+- Migration path: import existing `drinks.json` into SQLite on first run.
+- Faster queries for historical data and trends.
 
-**Done when:** you log a drink on your phone and your coworker sees the count update on their laptop.
+**Done when:** the app handles months of data without slowing down.
 
 ### Iteration 5 — Progressive Web App
 
 Make the app installable:
 
-- Service worker for offline caching.
+- Service worker for offline caching of static assets.
 - Web app manifest for home screen installation.
-- Push notification support for milestones ("Sarah just hit 5 refreshers today").
+- Queued offline entries that sync when the connection is restored.
 
-**Done when:** the team has the app on their home screens and gets a notification when someone hits a new daily record.
+**Done when:** the team has the app on their home screens and can log drinks even when the Wi-Fi drops.
 
 ## What This Platform Is Not
 
 - **Not a calorie tracker.** It does not estimate nutritional content.
 - **Not a personal health app.** It is a shared, social activity board.
-- **Not a subscription service.** It costs nothing to run in its default configuration.
-- **Not a native app.** It runs in the browser. That is a feature, not a limitation.
+- **Not a subscription service.** It costs nothing to run on free-tier hosting.
+- **Not a native app.** It runs in the browser, served by Node.js.
 
 ## Summary
 
-The platform is one HTML file styled like a neon-lit Tokyo arcade crossed with a Miami Vice sunset. It costs nothing to host. It requires nothing to build. A group of coworkers opens the same page, taps buttons when they see each other grab a drink, and watches the tallies climb through the day. The UI is separate from the logic. The logic is pure functions. The data is flat JSON. Ship `index.html`, open a browser, start counting.
+The platform is a Node.js application styled like a neon-lit Tokyo arcade crossed with a Miami Vice sunset. Node.js serves the frontend, runs the API, and persists data — one runtime, one language, one deployment. A group of coworkers opens the same page, taps buttons when they see each other grab a drink, and watches the tallies update in real time across every screen. The UI is static files. The logic is pure functions. The data is flat JSON. Run `node server.js`, open a browser, start counting.
