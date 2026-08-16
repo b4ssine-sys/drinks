@@ -52,13 +52,6 @@ html, body {
 
 .section-top {
   flex: 7;
-}
-
-.section-bottom {
-  flex: 3;
-}
-
-.section-top {
   border-bottom: none;
   border-color: var(--pink);
   border-image: linear-gradient(90deg, var(--pink), var(--teal)) 1;
@@ -69,6 +62,10 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
+}
+
+.section-bottom {
+  flex: 3;
 }
 
 .section-bottom {
@@ -200,9 +197,7 @@ html, body {
 /* --- Screen --- */
 
 .screen {
-  flex: 1;
   width: 90%;
-  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;

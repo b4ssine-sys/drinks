@@ -12,7 +12,7 @@ export async function GET() {
     const count = await db.getCount();
     return NextResponse.json({ count });
   } catch (err) {
-    return NextResponse.json({ count: 0 });
+    return NextResponse.json({ error: err.message }, { status: 503 });
   }
 }
 
@@ -22,6 +22,6 @@ export async function POST() {
     const count = await db.incrementCount();
     return NextResponse.json({ count });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 503 });
   }
 }
