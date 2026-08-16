@@ -9,6 +9,7 @@ const STORAGE_KEY = 'drinks-logged-by';
 export default function Home() {
   const [playing, setPlaying] = useState(false);
   const [count, setCount] = useState(0);
+  const [todayCount, setTodayCount] = useState(0);
   const [loggedBy, setLoggedBy] = useState('');
   const [identityInput, setIdentityInput] = useState('');
   const [needsIdentity, setNeedsIdentity] = useState(false);
@@ -16,7 +17,10 @@ export default function Home() {
   const refreshCount = useCallback(() => {
     fetch('/api/count')
       .then((r) => { if (r.ok) return r.json(); throw new Error(); })
-      .then((data) => setCount(data.count))
+      .then((data) => {
+        setCount(data.count);
+        setTodayCount(data.today ?? data.count);
+      })
       .catch(() => {});
   }, []);
 
@@ -29,6 +33,9 @@ export default function Home() {
     } else {
       setNeedsIdentity(true);
     }
+
+    const interval = setInterval(refreshCount, 10000);
+    return () => clearInterval(interval);
   }, [refreshCount]);
 
   const saveIdentity = useCallback(() => {
@@ -46,6 +53,7 @@ export default function Home() {
     setPlaying(false);
     const actor = loggedBy || 'unknown';
     setCount((c) => c + 1);
+    setTodayCount((c) => c + 1);
     fetch('/api/count', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,15 +62,15 @@ export default function Home() {
       .then((r) => { if (r.ok) return r.json(); throw new Error(); })
       .then((data) => {
         setCount(data.count);
-        window.setTimeout(() => refreshCount(), 4000);
+        if (data.today != null) setTodayCount(data.today);
       })
       .catch(() => {});
-  }, [loggedBy, refreshCount]);
+  }, [loggedBy]);
 
   return (
     <div className="container">
       <div className="section section-top">
-        <Screen playing={playing} onAnimationComplete={handleAnimationComplete} count={count} />
+        <Screen playing={playing} onAnimationComplete={handleAnimationComplete} count={count} todayCount={todayCount} />
       </div>
 
       <hr className="divider" />
