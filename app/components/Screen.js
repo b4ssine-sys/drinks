@@ -5,9 +5,15 @@ import PixelSprite from './PixelSprite';
 const SPRITE_SHEET = '/img/drink-sprite.svg';
 
 export default function Screen({ playing, onAnimationComplete, count }) {
+  const today = new Date().toLocaleDateString('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
     <>
-      <h1 className="title">JAYS BEV COUNT</h1>
+      <h1 className="title">{today} JAYS BEV COUNT</h1>
       <div className="screen">
         <PixelSprite
           spriteSheetSrc={SPRITE_SHEET}
@@ -21,7 +27,10 @@ export default function Screen({ playing, onAnimationComplete, count }) {
           label={playing ? 'DRINKING...' : 'READY'}
         />
       </div>
-      <span className="drink-counter">{count}</span>
+      <div className="total-counter-panel" aria-label="Total drink counter">
+        <span className="total-label">TOTAL</span>
+        <span className="drink-counter">{count}</span>
+      </div>
     </>
   );
 }
