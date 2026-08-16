@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     fetch('/api/count')
-      .then((r) => r.json())
+      .then((r) => { if (r.ok) return r.json(); throw new Error(); })
       .then((data) => setCount(data.count))
       .catch(() => {});
   }, []);
@@ -21,10 +21,11 @@ export default function Home() {
 
   const handleAnimationComplete = useCallback(() => {
     setPlaying(false);
+    setCount((c) => c + 1);
     fetch('/api/count', { method: 'POST' })
-      .then((r) => r.json())
+      .then((r) => { if (r.ok) return r.json(); throw new Error(); })
       .then((data) => setCount(data.count))
-      .catch(() => setCount((c) => c + 1));
+      .catch(() => {});
   }, []);
 
   return (
