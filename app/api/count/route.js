@@ -6,6 +6,10 @@ const DATA_DIR = path.join(process.cwd(), '.data');
 const COUNTER_FILE = path.join(DATA_DIR, 'drink-count.json');
 const CLICK_LOG_FILE = path.join(DATA_DIR, 'drink-click-log.json');
 
+let memoryCount = null;
+let memoryTodayCount = 0;
+let memoryTodayDate = new Date().toISOString().slice(0, 10);
+
 async function ensureDataDir() {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
@@ -51,13 +55,16 @@ async function ensureTable(pool) {
 async function readFile() {
   try {
     const data = await fs.readFile(COUNTER_FILE, 'utf8');
-    return JSON.parse(data).count || 0;
+    const count = JSON.parse(data).count ?? 0;
+    if (memoryCount === null) memoryCount = count;
+    return count;
   } catch {
-    return 0;
+    return memoryCount ?? 0;
   }
 }
 
 async function writeFile(count) {
+  memoryCount = count;
   try {
     await ensureDataDir();
     await fs.writeFile(COUNTER_FILE, JSON.stringify({ count }));
@@ -139,11 +146,16 @@ export async function GET(request) {
   }
 
   const count = await readFile();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (memoryTodayDate !== todayStr) {
+    memoryTodayDate = todayStr;
+    memoryTodayCount = 0;
+  }
   if (wantLog) {
     const log = await readClickLog();
-    return NextResponse.json({ count, today: count, log });
+    return NextResponse.json({ count, today: memoryTodayCount, log });
   }
-  return NextResponse.json({ count, today: count });
+  return NextResponse.json({ count, today: memoryTodayCount });
 }
 
 async function getRecentLogEntries() {
@@ -186,5 +198,11 @@ export async function POST(request) {
   const count = previousCount + 1;
   await writeFile(count);
   await appendClickLog(loggedBy, count);
-  return NextResponse.json({ count, today: count, logged_by: loggedBy });
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (memoryTodayDate !== todayStr) {
+    memoryTodayDate = todayStr;
+    memoryTodayCount = 0;
+  }
+  memoryTodayCount++;
+  return NextResponse.json({ count, today: memoryTodayCount, logged_by: loggedBy });
 }
