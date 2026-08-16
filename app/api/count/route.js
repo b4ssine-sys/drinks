@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import path from 'path';
 
-const COUNTER_FILE = path.join(process.cwd(), '.drink-count.json');
+const COUNTER_FILE = '/tmp/drink-count.json';
 
 let pgPool = null;
 let tableReady = false;
@@ -13,7 +12,9 @@ function getPool() {
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 5000,
+      max: 1,
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 20000,
     });
   }
   return pgPool;
@@ -42,7 +43,9 @@ async function readFile() {
 }
 
 async function writeFile(count) {
-  await fs.writeFile(COUNTER_FILE, JSON.stringify({ count }));
+  try {
+    await fs.writeFile(COUNTER_FILE, JSON.stringify({ count }));
+  } catch {}
 }
 
 async function getCountFromDb() {
@@ -67,7 +70,9 @@ export async function GET() {
   try {
     const dbCount = await getCountFromDb();
     if (dbCount !== null) return NextResponse.json({ count: dbCount });
-  } catch {}
+  } catch (err) {
+    console.error('DB GET failed:', err.message);
+  }
   const count = await readFile();
   return NextResponse.json({ count });
 }
@@ -75,8 +80,13 @@ export async function GET() {
 export async function POST() {
   try {
     const dbCount = await incrementInDb();
-    if (dbCount !== null) return NextResponse.json({ count: dbCount });
-  } catch {}
+    if (dbCount !== null) {
+      await writeFile(dbCount);
+      return NextResponse.json({ count: dbCount });
+    }
+  } catch (err) {
+    console.error('DB POST failed:', err.message);
+  }
   const count = (await readFile()) + 1;
   await writeFile(count);
   return NextResponse.json({ count });
