@@ -1,5 +1,7 @@
 'use client';
 
+import CircleButton from './components/CircleButton';
+
 export default function Home() {
   // --- State (to be implemented) ---
   // const [people, setPeople] = useState([]);
@@ -16,11 +18,7 @@ export default function Home() {
       <hr className="divider" />
 
       <div className="section section-bottom">
-        <div className="feed-header">
-          <h2 className="feed-title">LIVE FEED</h2>
-          <button className="btn-add" title="Add person">+</button>
-        </div>
-        <div className="feed-list">{/* Feed items go here */}</div>
+        <CircleButton />
       </div>
     </div>
   );

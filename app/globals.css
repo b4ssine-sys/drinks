@@ -186,6 +186,41 @@ html, body {
   text-align: center;
 }
 
+/* --- Circle button --- */
+
+.section-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle-btn {
+  width: clamp(80px, 20vw, 120px);
+  height: clamp(80px, 20vw, 120px);
+  border-radius: 50%;
+  border: 3px solid var(--pink);
+  background: transparent;
+  color: var(--pink);
+  font-family: var(--font-clean);
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(255, 45, 123, 0.3);
+}
+
+.circle-btn:hover {
+  background: var(--pink);
+  color: var(--bg-dark);
+  box-shadow:
+    0 0 20px rgba(255, 45, 123, 0.6),
+    0 0 40px rgba(255, 45, 123, 0.2);
+  transform: scale(1.05);
+}
+
 /* --- Responsive --- */
 
 @media (max-width: 480px) {
