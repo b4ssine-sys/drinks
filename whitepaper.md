@@ -8,10 +8,11 @@ In shared workspaces, people notice their coworkers' drink habits — the daily 
 
 1. **Ultra-lightweight** — minimal dependencies, fast to start, fast to use. No heavyweight frameworks.
 2. **Node.js full stack** — Node.js serves the frontend, runs the backend, and hosts the application. One runtime, one language, one deployment target.
-3. **Iterative by design** — start with the smallest useful version and layer capabilities on top without rewriting what came before. Each iteration is independently deployable.
-4. **Free to host** — deployable on free-tier Node.js hosting services at zero cost.
-5. **Multi-user, shared access** — multiple people open the same site and can log drinks for anyone in the group. This is a communal board, not a personal diary.
-6. **UI separated from logic** — presentation code and business logic live in separate layers so either can be changed independently.
+3. **Aiven-managed backend services** — database and real-time infrastructure run on Aiven's managed cloud platform. No self-managed databases, no ops burden.
+4. **Iterative by design** — start with the smallest useful version and layer capabilities on top without rewriting what came before. Each iteration is independently deployable.
+5. **Free to host** — deployable on free-tier Node.js hosting with Aiven's free-tier managed services.
+6. **Multi-user, shared access** — multiple people open the same site and can log drinks for anyone in the group. This is a communal board, not a personal diary.
+7. **UI separated from logic** — presentation code and business logic live in separate layers so either can be changed independently.
 
 ## Core Concept
 
@@ -50,7 +51,15 @@ The result is a neon-soaked, tile-based dashboard that feels like a Tokyo arcade
 
 ### Runtime: Node.js
 
-Node.js is the single runtime for the entire application. It serves the frontend, handles API requests, and manages data persistence. No separate web server, no separate backend language.
+Node.js is the single runtime for the entire application. It serves the frontend, handles API requests, and connects to Aiven-managed backend services. No separate web server, no separate backend language.
+
+### Backend Services: Aiven (aiven.io)
+
+Aiven provides managed cloud infrastructure so the app never needs to self-host a database or message broker:
+
+- **Aiven for PostgreSQL** — managed PostgreSQL database for persistent storage of all drink entries, person profiles, and historical data. Handles structured queries, aggregations, and date-range filtering. Connected via the `pg` Node.js driver using Aiven-provided connection credentials.
+
+- **Aiven for Redis** — managed Redis instance for real-time pub/sub. When a drink is logged, the server publishes the event to a Redis channel. All connected Node.js server instances subscribe to the channel and push updates to their WebSocket clients. This enables horizontal scaling — multiple server instances stay in sync through Redis without direct coordination.
 
 ### Backend: Express.js (Node.js)
 
@@ -58,8 +67,8 @@ A lightweight Express server provides:
 
 - **Static file serving** — serves the HTML, CSS, and JavaScript frontend.
 - **REST API** — endpoints for logging drinks, querying counts, and managing people.
-- **In-memory + file persistence** — data stored in a JSON file on disk, loaded into memory on startup. No database required.
-- **WebSocket support** — real-time updates pushed to all connected browsers via `ws` or Socket.io.
+- **PostgreSQL persistence** — drink entries written to Aiven PostgreSQL via the `pg` driver.
+- **WebSocket + Redis pub/sub** — real-time updates pushed to all connected browsers. Redis pub/sub ensures updates propagate across multiple server instances.
 
 ### Frontend: Vanilla HTML/CSS/JS
 
@@ -72,7 +81,8 @@ drinks/
   server.js          — Express server, API routes, WebSocket setup
   lib/
     logic.js         — pure business logic (no Express, no DOM)
-    store.js         — data persistence (read/write JSON file)
+    db.js            — PostgreSQL connection and queries (Aiven)
+    pubsub.js        — Redis pub/sub connection (Aiven)
   public/
     index.html       — main page markup
     css/
@@ -80,9 +90,33 @@ drinks/
     js/
       app.js         — UI rendering and event handling
       api.js         — fetch wrapper for backend communication
-  data/
-    drinks.json      — persistent data file (auto-created)
   package.json
+```
+
+### Infrastructure Diagram
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Aiven Cloud                       │
+│                                                      │
+│   ┌──────────────────┐    ┌──────────────────┐      │
+│   │   PostgreSQL     │    │     Redis         │      │
+│   │   (persistence)  │    │   (pub/sub)       │      │
+│   └────────┬─────────┘    └────────┬─────────┘      │
+│            │                       │                  │
+└────────────┼───────────────────────┼──────────────────┘
+             │                       │
+     ┌───────┴───────────────────────┴───────┐
+     │           Node.js Server              │
+     │  Express + WebSocket + pg + ioredis   │
+     └───────────────────┬───────────────────┘
+                         │
+          ┌──────────────┼──────────────────┐
+          │              │                  │
+     ┌────┴────┐   ┌────┴────┐       ┌────┴────┐
+     │ Browser │   │ Browser │  ...  │ Browser │
+     │ (phone) │   │(laptop) │       │(tablet) │
+     └─────────┘   └─────────┘       └─────────┘
 ```
 
 ## Architecture
@@ -97,9 +131,10 @@ The codebase enforces a strict boundary between three layers:
 - `getDailySummary(entries, date)` — computes drink counts and totals for a given day.
 - `getPersonSummary(entries, personId, date)` — returns one person's daily tally.
 
-**Server Layer** (`server.js`, `lib/store.js`) — handles HTTP, WebSocket, and persistence:
+**Server Layer** (`server.js`, `lib/db.js`, `lib/pubsub.js`) — handles HTTP, WebSocket, and persistence:
 - Receives API requests and delegates to the logic layer.
-- Persists state to a JSON file on disk.
+- Persists entries to Aiven PostgreSQL.
+- Publishes drink events to Aiven Redis; subscribes to receive events from other server instances.
 - Broadcasts updates to all connected clients via WebSocket.
 
 **UI Layer** (`public/js/app.js`, `public/css/style.css`) — renders state to the DOM:
@@ -107,11 +142,11 @@ The codebase enforces a strict boundary between three layers:
 - Handles tap/click events and sends requests to the API.
 - Listens for WebSocket messages to update the display in real time.
 
-The logic layer can be tested with plain Node.js — no browser, no server. The UI layer can be reskinned without touching the counting logic. The server layer can swap its persistence backend without affecting either.
+The logic layer can be tested with plain Node.js — no browser, no server, no database. The UI layer can be reskinned without touching the counting logic. The server layer can swap its persistence backend without affecting either.
 
 ### Data Shape
 
-Every drink event is a flat JSON object:
+Every drink event is a flat JSON object (and a corresponding PostgreSQL row):
 
 ```json
 {
@@ -125,23 +160,55 @@ Every drink event is a flat JSON object:
 
 No volume tracking, no calories, no nutritional data. Just who drank what, when, and who saw it.
 
+### Database Schema (Aiven PostgreSQL)
+
+```sql
+CREATE TABLE drinks (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  person      TEXT NOT NULL,
+  beverage    TEXT NOT NULL,
+  logged_by   TEXT NOT NULL
+);
+
+CREATE TABLE people (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  avatar      TEXT DEFAULT '',
+  default_bev TEXT DEFAULT 'drink'
+);
+
+CREATE INDEX idx_drinks_person_date ON drinks (person, timestamp);
+CREATE INDEX idx_drinks_date ON drinks (timestamp);
+```
+
 ### Multi-User Access
 
-Because the Node.js server is the single source of truth, all connected browsers see the same data from the start. When one user logs a drink, the server persists it and broadcasts the update over WebSocket to every open client. No polling, no manual refresh.
+All connected browsers see the same data because the Node.js server reads from and writes to a shared Aiven PostgreSQL database. When one user logs a drink:
+
+1. The server writes the entry to PostgreSQL.
+2. The server publishes the event to an Aiven Redis channel.
+3. All server instances (if scaled horizontally) receive the event via Redis subscription.
+4. Each server instance pushes the update to its connected WebSocket clients.
+
+No polling, no manual refresh, no stale data.
 
 ### Hosting Strategy
 
-The app is a Node.js process. Any free-tier Node.js hosting service works:
+The app is a Node.js process that connects to Aiven-managed services. The Node.js server can run on any free-tier hosting platform:
 
 | Service | How to Deploy | Always On (Free Tier) |
 |---|---|---|
 | **Render** | Connect a Git repo, set start command to `node server.js` | Spins down after inactivity, wakes on request |
 | **Railway** | Connect a Git repo, auto-detects Node.js | 500 hours/month free |
-| **Glitch** | Import from GitHub or edit in browser | Sleeps after 5 min inactivity |
 | **Fly.io** | `fly launch` from the command line | 3 shared VMs free |
-| **Cyclic** | Connect a Git repo | Serverless, scales to zero |
 
-For always-on behavior on a free tier, Render or Railway are the strongest options. Glitch is good for quick demos and collaborative editing.
+Aiven services are configured via environment variables (`DATABASE_URL`, `REDIS_URL`) set in the hosting platform's dashboard. No credentials in code.
+
+| Aiven Service | Purpose | Free Tier |
+|---|---|---|
+| **Aiven for PostgreSQL** | Persistent storage for drink entries and people | Free plan available |
+| **Aiven for Redis** | Real-time pub/sub for cross-instance sync | Free plan available |
 
 ## Iteration Plan
 
@@ -151,10 +218,11 @@ The smallest useful version. A Node.js server that:
 
 - Serves a single page with a card for each person in the group.
 - Each card has a button to log a drink (defaults to a generic "drink").
-- Tapping the button sends a POST to the API, which persists the entry and broadcasts the update.
-- All connected browsers see the count update in real time via WebSocket.
+- Tapping the button sends a POST to the API, which writes to PostgreSQL and broadcasts via WebSocket.
+- All connected browsers see the count update in real time.
 - The count resets visually each day.
 - Styled with the retro Tokyo x Miami Vice theme from day one.
+- Uses Aiven PostgreSQL from day one — no throwaway local storage to migrate later.
 
 **Done when:** you tap a coworker's card on your phone and your coworker sees the count go up on their laptop.
 
@@ -172,7 +240,7 @@ Add drink-specific logging:
 
 Add the ability to look back:
 
-- API endpoints for querying historical data by date range.
+- PostgreSQL queries for historical data by date range.
 - View previous days' counts in the UI.
 - Simple inline charts (SVG or canvas, no library) showing drink frequency over time.
 - "Most consumed" and "streak" indicators per person.
@@ -189,15 +257,15 @@ Add the ability to manage the group:
 
 **Done when:** a new coworker joins the team and can be added to the board in seconds.
 
-### Iteration 4 — Persistent Database
+### Iteration 4 — Horizontal Scaling with Redis
 
-Replace the JSON file with a lightweight database:
+Enable multiple server instances behind a load balancer:
 
-- SQLite via `better-sqlite3` for zero-config, file-based persistence.
-- Migration path: import existing `drinks.json` into SQLite on first run.
-- Faster queries for historical data and trends.
+- Aiven Redis pub/sub ensures all instances stay in sync.
+- Any instance can handle any request — stateless server design.
+- WebSocket connections distribute across instances; Redis relays events between them.
 
-**Done when:** the app handles months of data without slowing down.
+**Done when:** the app handles traffic spikes by adding server instances without any code changes.
 
 ### Iteration 5 — Progressive Web App
 
@@ -205,7 +273,7 @@ Make the app installable:
 
 - Service worker for offline caching of static assets.
 - Web app manifest for home screen installation.
-- Queued offline entries that sync when the connection is restored.
+- Queued offline entries that sync to PostgreSQL when the connection is restored.
 
 **Done when:** the team has the app on their home screens and can log drinks even when the Wi-Fi drops.
 
@@ -213,9 +281,9 @@ Make the app installable:
 
 - **Not a calorie tracker.** It does not estimate nutritional content.
 - **Not a personal health app.** It is a shared, social activity board.
-- **Not a subscription service.** It costs nothing to run on free-tier hosting.
+- **Not a subscription service.** It runs on free-tier hosting and Aiven's free plans.
 - **Not a native app.** It runs in the browser, served by Node.js.
 
 ## Summary
 
-The platform is a Node.js application styled like a neon-lit Tokyo arcade crossed with a Miami Vice sunset. Node.js serves the frontend, runs the API, and persists data — one runtime, one language, one deployment. A group of coworkers opens the same page, taps buttons when they see each other grab a drink, and watches the tallies update in real time across every screen. The UI is static files. The logic is pure functions. The data is flat JSON. Run `node server.js`, open a browser, start counting.
+The platform is a Node.js application backed by Aiven-managed PostgreSQL and Redis, styled like a neon-lit Tokyo arcade crossed with a Miami Vice sunset. Aiven handles the database and real-time messaging so the app never self-manages infrastructure. A group of coworkers opens the same page, taps buttons when they see each other grab a drink, and watches the tallies update in real time across every screen. The UI is static files. The logic is pure functions. The data lives in PostgreSQL. Run `node server.js`, open a browser, start counting.
