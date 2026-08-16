@@ -9,11 +9,30 @@
 <body>
   <div class="container">
     <div class="section section-top" id="section-top">
+      <h1 class="title">DRINK TRACKER</h1>
+      <p class="subtitle">tap a card to log a drink</p>
+      <div class="people-grid" id="people-grid"></div>
     </div>
     <hr class="divider">
     <div class="section section-bottom" id="section-bottom">
+      <div class="feed-header">
+        <h2 class="feed-title">LIVE FEED</h2>
+        <button class="btn-add" id="btn-add-person" title="Add person">+</button>
+      </div>
+      <div class="feed-list" id="feed-list">
+        <p class="feed-empty">No drinks logged today</p>
+      </div>
     </div>
   </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title" id="modal-title">ADD PERSON</h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
