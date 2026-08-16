@@ -12,7 +12,7 @@ export default function Screen({ playing, onAnimationComplete }) {
         frameWidth={64}
         frameHeight={100}
         frames={5}
-        duration={0.4}
+        duration={0.8}
         scale={3}
         playing={playing}
         onComplete={onAnimationComplete}
