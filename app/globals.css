@@ -199,10 +199,34 @@ html, body {
   justify-content: center;
 }
 
-.screen-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+/* --- Pixel Sprite --- */
+
+@keyframes pixel-step {
+  from { background-position-x: 0; }
+  to { background-position-x: -100%; }
+}
+
+.pixel-sprite-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+.pixel-sprite {
+  image-rendering: pixelated;
+  animation-name: pixel-step;
+  animation-iteration-count: infinite;
+}
+
+.pixel-sprite-label {
+  margin-top: 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--teal);
+  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
 }
 
 /* --- Circle button --- */
