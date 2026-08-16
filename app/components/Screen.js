@@ -2,19 +2,21 @@
 
 import PixelSprite from './PixelSprite';
 
-const SPRITE_FULL = '/img/drink-full.svg';
-const SPRITE_EMPTY = '/img/drink-empty.svg';
+const SPRITE_SHEET = '/img/drink-sprite.svg';
 
-export default function Screen({ drinkState }) {
+export default function Screen({ playing, onAnimationComplete }) {
   return (
     <div className="screen">
       <PixelSprite
-        spriteSheetSrc={drinkState ? SPRITE_FULL : SPRITE_EMPTY}
+        spriteSheetSrc={SPRITE_SHEET}
         frameWidth={64}
         frameHeight={100}
-        frames={1}
+        frames={2}
+        duration={0.4}
         scale={3}
-        label={drinkState ? 'DRINKING' : 'EMPTY'}
+        playing={playing}
+        onComplete={onAnimationComplete}
+        label={playing ? 'DRINKING...' : 'READY'}
       />
     </div>
   );

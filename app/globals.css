@@ -215,8 +215,12 @@ html, body {
 
 .pixel-sprite {
   image-rendering: pixelated;
-  animation-name: pixel-step;
-  animation-iteration-count: infinite;
+  background-position-x: 0;
+  overflow: hidden;
+}
+
+.pixel-sprite--playing {
+  animation: pixel-step var(--sprite-duration, 0.4s) steps(var(--sprite-steps, 2)) 1 forwards;
 }
 
 .pixel-sprite-label {
