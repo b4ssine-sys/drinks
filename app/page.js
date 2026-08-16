@@ -1,24 +1,22 @@
 'use client';
 
+import { useState } from 'react';
+import Screen from './components/Screen';
 import CircleButton from './components/CircleButton';
 
 export default function Home() {
-  // --- State (to be implemented) ---
-  // const [people, setPeople] = useState([]);
-  // const [drinks, setDrinks] = useState([]);
+  const [drinkState, setDrinkState] = useState(true);
 
   return (
     <div className="container">
       <div className="section section-top">
-        <h1 className="title">DRINK TRACKER</h1>
-        <p className="subtitle">tap a card to log a drink</p>
-        <div className="people-grid">{/* Person cards go here */}</div>
+        <Screen drinkState={drinkState} />
       </div>
 
       <hr className="divider" />
 
       <div className="section section-bottom">
-        <CircleButton />
+        <CircleButton onClick={() => setDrinkState(!drinkState)} />
       </div>
     </div>
   );
