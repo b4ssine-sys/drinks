@@ -10,7 +10,7 @@ export default function IdentityModal({ onSave }) {
   }, [input, onSave]);
 
   return (
-    <div className="identity-overlay">
+    <div className="identity-overlay active">
       <div className="identity-card">
         <h2 className="identity-title">WHO PRESSED IT?</h2>
         <input

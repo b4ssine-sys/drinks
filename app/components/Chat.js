@@ -40,10 +40,11 @@ export default function Chat({ author }) {
       .then((msg) => {
         setMessages((prev) => [...prev, msg]);
         setInput('');
+        fetchMessages();
       })
       .catch(() => {})
       .finally(() => setSending(false));
-  }, [input, sending, author]);
+  }, [input, sending, author, fetchMessages]);
 
   const handleKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
