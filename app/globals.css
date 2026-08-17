@@ -58,7 +58,8 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: flex-start;
+  padding-top: 8px;
   position: relative;
 }
 
@@ -263,6 +264,8 @@ html, body {
   justify-content: center;
   gap: clamp(14px, 3vw, 34px);
   flex-wrap: nowrap;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .center-visual {
@@ -306,12 +309,12 @@ html, body {
 }
 
 .pixel-sprite-label {
-  margin: 0 0 8px;
+  margin: 4px 0 8px;
   font-family: var(--font-pixel);
-  font-size: 12px;
-  letter-spacing: 3px;
-  color: var(--teal);
-  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
+  font-size: 20px;
+  letter-spacing: 4px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 8px rgba(255, 45, 123, 0.6);
 }
 
 /* --- Counter --- */
