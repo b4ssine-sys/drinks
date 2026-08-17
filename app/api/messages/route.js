@@ -18,7 +18,7 @@ function getPool() {
     const { Pool } = require('pg');
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       max: 1,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 20000,
@@ -29,6 +29,7 @@ function getPool() {
 
 async function ensureTable(pool) {
   if (!tableReady) {
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,7 +54,7 @@ async function readMessagesFile() {
 
 async function writeMessagesFile(messages) {
   await ensureDataDir();
-  await fs.writeFile(MESSAGES_FILE, JSON.stringify(messages));
+  await fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2));
 }
 
 export async function GET() {
@@ -66,7 +67,8 @@ export async function GET() {
       );
       return NextResponse.json(rows.reverse());
     } catch (err) {
-      console.error('DB GET messages failed:', err.message);
+      console.error('DB GET messages failed:', err);
+      return NextResponse.json({ error: 'Database read failed' }, { status: 500 });
     }
   }
 
@@ -100,7 +102,8 @@ export async function POST(request) {
       );
       return NextResponse.json(rows[0], { status: 201 });
     } catch (err) {
-      console.error('DB POST message failed:', err.message);
+      console.error('DB POST message failed:', err);
+      return NextResponse.json({ error: 'Database insert failed' }, { status: 500 });
     }
   }
 
