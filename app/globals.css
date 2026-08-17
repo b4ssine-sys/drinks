@@ -73,7 +73,25 @@ html, body {
   padding: 16px;
 }
 
-/* --- Bottom Bar: Date + Total --- */
+/* --- Date Overlay (bottom-left of forest) --- */
+
+.date-overlay {
+  position: absolute;
+  bottom: 6px;
+  left: 12px;
+  z-index: 5;
+  font-family: var(--font-pixel);
+  font-size: clamp(9px, 2vw, 13px);
+  letter-spacing: 2px;
+  color: var(--teal);
+  text-shadow: 0 0 6px rgba(0, 229, 204, 0.6), 0 0 14px rgba(0, 229, 204, 0.3), 1px 1px 0 #000;
+  background: rgba(10, 10, 26, 0.7);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 229, 204, 0.3);
+}
+
+/* --- Bottom Bar: Total --- */
 
 .bottom-bar {
   display: flex;
@@ -82,14 +100,6 @@ html, body {
   width: 100%;
   padding: 0 4px;
   margin-bottom: 12px;
-}
-
-.digital-date {
-  font-family: var(--font-pixel);
-  font-size: clamp(10px, 2.2vw, 14px);
-  letter-spacing: 2px;
-  color: var(--teal);
-  text-shadow: 0 0 6px rgba(0, 229, 204, 0.5), 0 0 12px rgba(0, 229, 204, 0.2);
 }
 
 .bottom-total {

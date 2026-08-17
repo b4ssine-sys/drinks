@@ -72,22 +72,22 @@ export default function Home() {
     <div className="container">
       <div className="section section-top">
         <Screen playing={playing} onAnimationComplete={handleAnimationComplete} todayCount={todayCount} />
+        <div className="date-overlay">
+          {(() => {
+            const now = new Date();
+            const day = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yy = String(now.getFullYear()).slice(-2);
+            return `${day} ${dd}-${mm}-${yy}`;
+          })()}
+        </div>
       </div>
 
       <hr className="divider" />
 
       <div className="section section-bottom">
         <div className="bottom-bar">
-          <div className="digital-date">
-            {(() => {
-              const now = new Date();
-              const day = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-              const dd = String(now.getDate()).padStart(2, '0');
-              const mm = String(now.getMonth() + 1).padStart(2, '0');
-              const yy = String(now.getFullYear()).slice(-2);
-              return `${day} ${dd}-${mm}-${yy}`;
-            })()}
-          </div>
           <div className="bottom-total">
             <span className="bottom-total-label">TOTAL</span>
             <span className="bottom-total-count">{count}</span>
