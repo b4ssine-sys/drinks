@@ -42,7 +42,6 @@ html, body {
 }
 
 .section {
-  overflow: hidden;
   padding: 16px;
   position: relative;
 }
@@ -53,8 +52,8 @@ html, body {
   overflow: visible;
   background-color: #3b6e2c;
   background-image: url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png');
-  background-size: 100% 100%;
-  background-position: center;
+  background-size: 100% 102%;
+  background-position: center top;
   background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
@@ -78,6 +77,9 @@ html, body {
   height: 3px;
   width: 100%;
   margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  z-index: 1;
   background: linear-gradient(90deg, var(--pink), var(--teal), var(--purple), var(--pink));
   box-shadow:
     0 0 8px var(--pink),
