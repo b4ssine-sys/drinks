@@ -25,7 +25,7 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
             frameHeight={100}
             frames={5}
             duration={1}
-            scale={3}
+            scale={4.5}
             playing={playing}
           />
           <PixelSprite
