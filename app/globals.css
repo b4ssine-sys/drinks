@@ -124,6 +124,130 @@ html, body {
   letter-spacing: 2px;
 }
 
+.bottom-content {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* --- Chat --- */
+
+.chat-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 10, 26, 0.7);
+  border: 1px solid rgba(0, 229, 204, 0.25);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 229, 204, 0.2);
+}
+
+.chat-title {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--teal);
+  text-shadow: 0 0 6px rgba(0, 229, 204, 0.5);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chat-msg--mine .chat-msg-author {
+  color: var(--pink);
+}
+
+.chat-msg-author {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--teal);
+  opacity: 0.8;
+}
+
+.chat-msg-body {
+  font-family: var(--font-clean);
+  font-size: 13px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.chat-empty {
+  font-family: var(--font-clean);
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.chat-input-row {
+  display: flex;
+  border-top: 1px solid rgba(0, 229, 204, 0.2);
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: rgba(10, 10, 26, 0.5);
+  color: var(--text-primary);
+  font-family: var(--font-clean);
+  font-size: 14px;
+  outline: none;
+  min-width: 0;
+}
+
+.chat-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.chat-send {
+  padding: 8px 12px;
+  border: none;
+  background: var(--pink);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.chat-send:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.chat-char-count {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--text-secondary);
+  text-align: right;
+  padding: 2px 8px 4px;
+  opacity: 0.6;
+}
+
 .divider {
   border: none;
   height: 4px;

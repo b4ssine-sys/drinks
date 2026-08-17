@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Screen from './components/Screen';
 import CircleButton from './components/CircleButton';
 import IdentityModal from './components/IdentityModal';
+import Chat from './components/Chat';
 
 const STORAGE_KEY = 'drinks-logged-by';
 
@@ -93,7 +94,10 @@ export default function Home() {
             <span className="bottom-total-count">{count}</span>
           </div>
         </div>
-        <CircleButton onClick={handleClick} />
+        <div className="bottom-content">
+          <Chat author={loggedBy || 'anon'} />
+          <CircleButton onClick={handleClick} />
+        </div>
       </div>
 
       {needsIdentity && <IdentityModal onSave={saveIdentity} />}
