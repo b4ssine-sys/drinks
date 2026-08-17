@@ -2,8 +2,13 @@
 
 export default function CircleButton({ onClick }) {
   return (
-    <button className="circle-btn" onClick={onClick}>
-      +
+    <button className="refresher-btn" onClick={onClick}>
+      <img
+        src="/img/refresher-btn.svg"
+        alt="Add drink"
+        className="refresher-img"
+        draggable={false}
+      />
     </button>
   );
 }
