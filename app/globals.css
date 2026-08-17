@@ -16,7 +16,7 @@
   --purple-deep: #2d1b4e;
   --gold: #ffd700;
   --text-primary: #f0e6ff;
-  --text-secondary: #8a7fa8;
+  --text-secondary: #b8afcf; /* CCD: Heightened contrast against dark backgrounds */
   --border-glow: #ff2d7b;
   --font-pixel: 'Press Start 2P', monospace;
   --font-clean: 'Rajdhani', sans-serif;
@@ -28,17 +28,16 @@ html, body {
   font-family: var(--font-clean);
   background: var(--bg-dark);
   color: var(--text-primary);
+  overflow: hidden;
 }
 
-/* --- Layout --- */
+/* --- Layout Architecture --- */
 
 .container {
   display: flex;
   flex-direction: column;
   height: 100dvh;
   width: 100%;
-  padding: 0;
-  gap: 0;
 }
 
 .section {
@@ -48,12 +47,12 @@ html, body {
 
 .section-top {
   flex: 7;
-  padding: 0;
+  padding: clamp(8px, 2vh, 16px) clamp(12px, 3vw, 24px) 0;
   overflow: hidden;
   min-height: 0;
   background-color: #3b6e2c;
   background-image: url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png');
-  background-size: 100% 102%;
+  background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
   display: flex;
@@ -67,35 +66,30 @@ html, body {
 .section-bottom {
   flex: 3;
   min-height: 0;
-  background:
-    linear-gradient(0deg, rgba(45, 27, 78, 0.4) 0%, transparent 60%),
-    var(--bg-dark);
+  background: linear-gradient(0deg, rgba(45, 27, 78, 0.6) 0%, var(--bg-dark) 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 16px;
 }
 
 .divider {
   border: none;
-  height: 3px;
+  height: 4px;
   width: 100%;
-  margin: 0;
-  padding: 0;
   flex-shrink: 0;
-  z-index: 1;
+  z-index: 10;
   background: linear-gradient(90deg, var(--pink), var(--teal), var(--purple), var(--pink));
-  box-shadow:
-    0 0 8px var(--pink),
-    0 0 16px rgba(255, 45, 123, 0.3);
+  box-shadow: 0 0 12px var(--pink), 0 0 20px rgba(0, 229, 204, 0.4);
 }
 
-/* --- Typography --- */
+/* --- Typography & Headings --- */
 
 .title {
   font-family: var(--font-pixel);
-  font-size: clamp(22px, 5.5vw, 42px);
+  font-size: clamp(20px, 5vw, 38px);
   text-align: center;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: visible;
@@ -113,44 +107,185 @@ html, body {
 
 .subtitle {
   text-align: center;
-  font-size: clamp(10px, 2.5vw, 13px);
-  color: var(--text-secondary);
-  letter-spacing: 3px;
+  font-size: clamp(11px, 2.2vw, 14px);
+  color: #ffffff; /* CCD: Max contrast for immediate value proposition comprehension */
+  letter-spacing: 2.5px;
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 3px #000, -1px -1px 3px #000;
 }
 
 .feed-title {
   font-family: var(--font-pixel);
-  font-size: clamp(10px, 2.5vw, 14px);
-  letter-spacing: 3px;
+  font-size: clamp(11px, 2.2vw, 14px);
+  letter-spacing: 2px;
   color: var(--teal);
-  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
+  text-shadow: 0 0 8px rgba(0, 229, 204, 0.5);
 }
 
-/* --- Skeleton classes (to be styled) --- */
+/* --- Hero Interactive Hub --- */
 
-.people-grid {}
-.person-card {}
+.screen {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+}
+
+.hero-row {
+  width: min(100%, 680px);
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr; /* CCD: Balanced 3-column anchor focus */
+  align-items: center;
+  justify-items: center;
+  gap: clamp(8px, 2vw, 20px);
+  height: 100%;
+}
+
+.counter-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 26, 0.65); /* CCD: High contrast container backdrop */
+  padding: 12px clamp(8px, 2vw, 16px);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 204, 0.3);
+  width: 100%;
+}
+
+.counter-label {
+  font-family: var(--font-pixel);
+  font-size: clamp(10px, 2.2vw, 13px);
+  letter-spacing: 2px;
+  color: var(--teal);
+  margin-bottom: 4px;
+}
+
+.drink-counter {
+  font-family: var(--font-pixel);
+  font-size: clamp(36px, 8vw, 72px);
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #000, 0 0 12px rgba(255, 215, 0, 0.4);
+  line-height: 1;
+}
+
+/* CCD Focal CTA (The Refresher Button) */
+
+@keyframes cta-pulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(255, 45, 123, 0.6));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 22px rgba(255, 45, 123, 0.95)) drop-shadow(0 0 35px rgba(0, 229, 204, 0.5));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(255, 45, 123, 0.6));
+  }
+}
+
+.refresher-btn-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.refresher-btn {
+  width: clamp(110px, 24vw, 160px);
+  height: clamp(120px, 26vw, 175px);
+  border: 2px solid var(--pink);
+  border-radius: 12px;
+  background: rgba(18, 18, 42, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  animation: cta-pulse 2.2s infinite ease-in-out; /* CCD: Directional visual magnet */
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.refresher-btn:hover {
+  animation: none;
+  transform: scale(1.08);
+  background: rgba(45, 27, 78, 0.9);
+  border-color: var(--teal);
+  box-shadow: 0 0 25px var(--teal);
+}
+
+.refresher-btn:active {
+  transform: scale(0.95);
+}
+
+.refresher-btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
+}
+
+/* CCD Affordance Micro-Label */
+.cta-micro-label {
+  font-family: var(--font-pixel);
+  font-size: clamp(9px, 2vw, 11px);
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* --- Sprite & Center Visual --- */
+
+.center-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixel-sprite-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pixel-sprite {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 10px rgba(0, 229, 204, 0.4));
+}
+
+.pixel-sprite-label {
+  font-family: var(--font-pixel);
+  font-size: clamp(10px, 2.2vw, 14px);
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
+}
+
+/* --- Feed & Actions --- */
+
 .feed-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  padding: 0 4px;
 }
-.feed-list {}
-.feed-item {}
-
-/* --- Add button --- */
 
 .btn-add {
-  width: 46px;
-  height: 46px;
+  min-width: 44px; /* CCD: Mobile accessibility target size */
+  min-height: 44px;
   border-radius: 50%;
   border: 2px solid var(--pink);
-  background: transparent;
+  background: var(--bg-card);
   color: var(--pink);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
@@ -162,78 +297,38 @@ html, body {
 .btn-add:hover {
   background: var(--pink);
   color: var(--bg-dark);
-  box-shadow: 0 0 12px rgba(255, 45, 123, 0.5);
+  box-shadow: 0 0 16px var(--pink);
 }
 
-/* --- Modal --- */
+/* --- Modals & Friction-Free Inputs --- */
 
-.modal-overlay {
+.modal-overlay, .identity-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(10, 10, 26, 0.85);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
 }
 
-.modal-overlay.active {
+.modal-overlay.active, .identity-overlay.active {
   display: flex;
 }
 
-.modal {
-  background: var(--bg-card);
-  border: 2px solid var(--pink);
-  border-radius: 8px;
-  padding: 24px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 0 30px rgba(255, 45, 123, 0.3);
-}
-
-.modal-title {
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--pink);
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-/* --- Identity Modal --- */
-
-.identity-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 26, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-
-.identity-card {
+.identity-card, .modal {
   background: var(--bg-card);
   border: 2px solid var(--pink);
   border-radius: 12px;
   padding: 24px;
-  width: min(400px, 100%);
-  box-shadow: 0 0 30px rgba(255, 45, 123, 0.3);
-}
-
-.identity-title {
-  font-family: var(--font-pixel);
-  font-size: 16px;
-  letter-spacing: 2px;
-  color: var(--pink);
-  text-align: center;
-  margin-bottom: 16px;
+  width: min(400px, 90vw);
+  box-shadow: 0 0 35px rgba(255, 45, 123, 0.4);
 }
 
 .identity-input {
   width: 100%;
+  min-height: 48px; /* CCD: Reduced input friction */
   padding: 12px;
   border-radius: 8px;
   border: 2px solid var(--teal);
@@ -243,121 +338,26 @@ html, body {
   margin-bottom: 16px;
 }
 
+.identity-input:focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow: 0 0 10px var(--pink);
+}
+
 .identity-button {
   width: 100%;
-  padding: 12px 16px;
+  min-height: 48px;
   border-radius: 8px;
   border: none;
-  background: var(--pink);
-  color: var(--bg-dark);
+  background: linear-gradient(90deg, var(--pink), #e0256c);
+  color: #fff;
+  font-family: var(--font-clean);
   font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 1px;
   cursor: pointer;
+  text-transform: uppercase;
 }
-
-/* --- Screen --- */
-
-.screen {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-row {
-  width: min(100%, 640px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(14px, 3vw, 34px);
-  flex-wrap: nowrap;
-  flex: 1;
-  min-height: 0;
-  margin-top: auto;
-  margin-bottom: auto;
-}
-
-.center-visual {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(4px, 1.5vh, 10px);
-  min-width: 0;
-  padding-top: 0;
-}
-
-.drink-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.pixel-sprite-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  overflow: visible;
-}
-
-.pixel-sprite {
-  image-rendering: pixelated;
-  background-position-x: 0;
-  background-position: center center;
-  overflow: visible;
-  display: block;
-  margin: 0 auto;
-  transform: translateY(0);
-  filter: drop-shadow(0 0 12px rgba(0, 229, 204, 0.4));
-}
-
-.pixel-sprite-label {
-  margin: clamp(2px, 0.5vh, 4px) 0 clamp(4px, 1vh, 8px);
-  font-family: var(--font-pixel);
-  font-size: clamp(12px, 3vw, 20px);
-  letter-spacing: 4px;
-  color: #ffffff;
-  text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 8px rgba(255, 45, 123, 0.6);
-}
-
-/* --- Counter --- */
-
-.counter-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-  min-width: 0;
-  flex: 1 1 0;
-}
-
-.counter-label {
-  font-family: var(--font-pixel);
-  font-size: clamp(12px, 3.5vw, 18px);
-  letter-spacing: 4px;
-  color: var(--teal);
-  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-  margin-bottom: 8px;
-}
-
-.drink-counter {
-  font-family: var(--font-pixel);
-  font-size: clamp(48px, 12vw, 96px);
-  letter-spacing: 3px;
-  color: var(--gold);
-  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-  line-height: 1;
-}
-
-/* --- Pixel Sprite --- */
 
 @keyframes pixel-step {
   from { background-position-x: 0px; }
@@ -366,38 +366,4 @@ html, body {
 
 .pixel-sprite--playing {
   animation: pixel-step var(--sprite-duration, 0.4s) steps(var(--sprite-steps, 2)) 1 forwards;
-}
-
-/* --- Refresher button --- */
-
-.refresher-btn {
-  width: clamp(104px, 26vw, 156px);
-  height: clamp(130px, 32vw, 195px);
-  max-height: 85%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  filter: drop-shadow(0 0 8px rgba(255, 45, 123, 0.4));
-}
-
-.refresher-btn:hover {
-  transform: scale(1.08);
-  filter: drop-shadow(0 0 16px rgba(255, 45, 123, 0.7)) drop-shadow(0 0 30px rgba(0, 229, 204, 0.3));
-}
-
-.refresher-btn:active {
-  transform: scale(0.95);
-}
-
-.refresher-img {
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-  object-fit: contain;
-  pointer-events: none;
 }
