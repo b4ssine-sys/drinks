@@ -90,7 +90,7 @@ html, body {
 
 .title {
   font-family: var(--font-pixel);
-  font-size: clamp(20px, 5vw, 36px);
+  font-size: clamp(25px, 6.25vw, 45px);
   text-align: center;
   letter-spacing: 4px;
   margin-bottom: 4px;
@@ -328,15 +328,16 @@ html, body {
 
 .counter-label {
   font-family: var(--font-pixel);
-  font-size: 12px;
+  font-size: 18px;
   letter-spacing: 4px;
   color: var(--teal);
   text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  margin-bottom: 8px;
 }
 
 .drink-counter {
   font-family: var(--font-pixel);
-  font-size: clamp(32px, 8vw, 64px);
+  font-size: clamp(48px, 12vw, 96px);
   letter-spacing: 3px;
   color: var(--gold);
   text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
