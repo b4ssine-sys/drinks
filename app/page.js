@@ -47,6 +47,7 @@ export default function Home() {
   const handleClick = useCallback(() => {
     if (playing) return;
     setPlaying(true);
+    setTimeout(() => setPlaying(false), 2000);
     const actor = loggedBy || 'unknown';
     setCount((c) => c + 1);
     setTodayCount((c) => c + 1);

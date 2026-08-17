@@ -29,12 +29,12 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
             playing={playing}
           />
           <PixelSprite
-            spriteSheetSrc="/img/running.png"
-            frameWidth={64}
-            frameHeight={64}
-            frames={4}
-            duration={0.7}
-            scale={2.4}
+            spriteSheetSrc="/img/running-combined.png"
+            frameWidth={169.25}
+            frameHeight={369}
+            frames={8}
+            duration={1.4}
+            scale={0.5}
             playing={playing}
             onComplete={onAnimationComplete}
             label={playing ? 'RUNNING...' : 'READY'}
