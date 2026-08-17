@@ -2,7 +2,7 @@
 
 import PixelSprite from './PixelSprite';
 
-export default function Screen({ playing, onAnimationComplete, count }) {
+export default function Screen({ playing, onAnimationComplete, count, todayCount }) {
   const today = new Date().toLocaleDateString('en-US', {
     month: 'numeric',
     day: 'numeric',
@@ -15,13 +15,19 @@ export default function Screen({ playing, onAnimationComplete, count }) {
       <div className="hero-row">
         <div className="counter-panel" aria-label="Today's drink counter">
           <span className="counter-label">TODAY</span>
-          <span className="drink-counter">{count}</span>
+          <span className="drink-counter">{todayCount}</span>
         </div>
 
         <div className="center-visual">
-          <div className="drink-badge" aria-label="Drink icon">
-            <img src="/img/drink-full.svg" alt="Drink" />
-          </div>
+          <PixelSprite
+            spriteSheetSrc="/img/drink-sprite.svg"
+            frameWidth={64}
+            frameHeight={100}
+            frames={5}
+            duration={1}
+            scale={3}
+            playing={playing}
+          />
           <PixelSprite
             spriteSheetSrc="/img/running.png"
             frameWidth={64}

@@ -35,7 +35,7 @@ export default function PixelSprite({
           backgroundPosition: '0 0',
           '--sprite-duration': `${duration}s`,
           '--sprite-steps': frames,
-          '--sprite-end-x': `-${(frames - 1) * scaledWidth}px`,
+          '--sprite-end-x': `-${frames * scaledWidth}px`,
         }}
       />
     </div>
