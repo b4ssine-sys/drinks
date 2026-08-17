@@ -73,6 +73,47 @@ html, body {
   padding: 16px;
 }
 
+/* --- Bottom Bar: Date + Total --- */
+
+.bottom-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  margin-bottom: 12px;
+}
+
+.digital-date {
+  font-family: var(--font-pixel);
+  font-size: clamp(10px, 2.2vw, 14px);
+  letter-spacing: 2px;
+  color: var(--teal);
+  text-shadow: 0 0 6px rgba(0, 229, 204, 0.5), 0 0 12px rgba(0, 229, 204, 0.2);
+}
+
+.bottom-total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.bottom-total-label {
+  font-family: var(--font-pixel);
+  font-size: clamp(10px, 2.2vw, 14px);
+  letter-spacing: 2px;
+  color: var(--teal);
+  text-shadow: 0 0 6px rgba(0, 229, 204, 0.5);
+}
+
+.bottom-total-count {
+  font-family: var(--font-pixel);
+  font-size: clamp(18px, 5vw, 32px);
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #000, 0 0 10px rgba(255, 215, 0, 0.4);
+  letter-spacing: 2px;
+}
+
 .divider {
   border: none;
   height: 4px;
@@ -137,7 +178,7 @@ html, body {
 .hero-row {
   width: min(100%, 680px);
   display: grid;
-  grid-template-columns: 1fr 1.1fr 1fr; /* CCD: Balanced 3-column anchor focus */
+  grid-template-columns: 1fr 1.2fr; /* CCD: Two-column layout — counter + sprite */
   align-items: center;
   justify-items: center;
   gap: clamp(8px, 2vw, 20px);
