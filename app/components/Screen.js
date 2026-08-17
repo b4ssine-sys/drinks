@@ -21,16 +21,10 @@ function useSpriteScale() {
   return scale;
 }
 
-export default function Screen({ playing, onAnimationComplete, count, todayCount }) {
-  const today = new Date().toLocaleDateString('en-US', {
-    month: 'numeric',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
+export default function Screen({ playing, onAnimationComplete, todayCount }) {
   const spriteScale = useSpriteScale();
 
-  const titleText = `${today} JAYS BEV COUNT`;
+  const titleText = `JAYS BEV COUNT`;
   const chars = titleText.split('');
   const n = chars.length;
   const maxDrop = 14;
@@ -110,10 +104,6 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
           />
         </div>
 
-        <div className="counter-panel" aria-label="Total drink counter">
-          <span className="counter-label">TOTAL</span>
-          <span className="drink-counter">{count}</span>
-        </div>
       </div>
     </>
   );
