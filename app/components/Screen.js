@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PixelSprite from './PixelSprite';
 
 function useSpriteScale() {
@@ -30,9 +30,57 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
 
   const spriteScale = useSpriteScale();
 
+  const titleText = `${today} JAYS BEV COUNT`;
+  const chars = titleText.split('');
+  const n = chars.length;
+  const maxDrop = 14;
+  const maxAngle = 8;
+
+  const titleRef = useRef(null);
+  const naturalWidth = useRef(0);
+  const [titleScale, setTitleScale] = useState(1);
+
+  useEffect(() => {
+    function update() {
+      if (!titleRef.current) return;
+      if (naturalWidth.current === 0) {
+        naturalWidth.current = titleRef.current.scrollWidth;
+      }
+      const available = window.innerWidth - 16;
+      setTitleScale(Math.min(1, available / naturalWidth.current));
+    }
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   return (
     <>
-      <h1 className="title">{today} JAYS BEV COUNT</h1>
+      <h1
+        ref={titleRef}
+        className="title"
+        aria-label={titleText}
+        style={{ transform: `scale(${titleScale})`, transformOrigin: 'center top' }}
+      >
+        {chars.map((char, i) => {
+          const t = n > 1 ? (2 * i / (n - 1)) - 1 : 0;
+          const y = maxDrop * t * t;
+          const r = maxAngle * t;
+          const isSpace = char === ' ';
+          return (
+            <span
+              key={i}
+              className="title-char"
+              style={{
+                transform: `translateY(${y}px) rotate(${r}deg)`,
+                ...(isSpace ? { width: '0.5em' } : {}),
+              }}
+            >
+              {isSpace ? ' ' : char}
+            </span>
+          );
+        })}
+      </h1>
       <div className="hero-row">
         <div className="counter-panel" aria-label="Today's drink counter">
           <span className="counter-label">TODAY</span>
