@@ -2,26 +2,25 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import pg from 'pg';
+
+const { Pool } = pg;
+
+export const dynamic = 'force-dynamic';
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
-
-async function ensureDataDir() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
 
 let pgPool = null;
 let tableReady = false;
 
 function getPool() {
   if (!pgPool && process.env.DATABASE_URL) {
-    const { Pool } = require('pg');
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       max: 1,
-      connectionTimeoutMillis: 10000,
-      idleTimeoutMillis: 20000,
+      connectionTimeoutMillis: 5000,
     });
   }
   return pgPool;
@@ -29,7 +28,6 @@ function getPool() {
 
 async function ensureTable(pool) {
   if (!tableReady) {
-    await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,7 +51,7 @@ async function readMessagesFile() {
 }
 
 async function writeMessagesFile(messages) {
-  await ensureDataDir();
+  await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2));
 }
 
@@ -67,8 +65,8 @@ export async function GET() {
       );
       return NextResponse.json(rows.reverse());
     } catch (err) {
-      console.error('DB GET messages failed:', err);
-      return NextResponse.json({ error: 'Database read failed' }, { status: 500 });
+      console.error('DB GET failed:', err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
     }
   }
 
@@ -81,12 +79,15 @@ export async function POST(request) {
   try {
     data = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const { author, body } = data;
   if (!author || !body) {
-    return NextResponse.json({ error: 'author and body required' }, { status: 400 });
+    return NextResponse.json(
+      { error: `Missing fields. Received keys: ${Object.keys(data).join(', ')}` },
+      { status: 400 }
+    );
   }
   if (body.length > 50) {
     return NextResponse.json({ error: 'Message exceeds 50 characters' }, { status: 400 });
@@ -102,8 +103,8 @@ export async function POST(request) {
       );
       return NextResponse.json(rows[0], { status: 201 });
     } catch (err) {
-      console.error('DB POST message failed:', err);
-      return NextResponse.json({ error: 'Database insert failed' }, { status: 500 });
+      console.error('DB POST failed:', err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
     }
   }
 
