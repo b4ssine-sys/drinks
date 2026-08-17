@@ -50,6 +50,8 @@ html, body {
 .section-top {
   flex: 7;
   padding: 0;
+  overflow: visible;
+  background-color: #3b6e2c;
   background-image: url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png');
   background-size: 104% 104%;
   background-position: center;
