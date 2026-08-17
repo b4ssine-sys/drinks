@@ -53,7 +53,7 @@ html, body {
   overflow: visible;
   background-color: #3b6e2c;
   background-image: url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png');
-  background-size: 104% 104%;
+  background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   display: flex;
@@ -97,7 +97,7 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: none;
-  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(-1px -1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000) drop-shadow(1px -1px 0 #000) drop-shadow(-1px 1px 0 #000);
 }
 
 .subtitle {
@@ -329,7 +329,7 @@ html, body {
   font-size: 12px;
   letter-spacing: 4px;
   color: var(--teal);
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.8), 1px -1px 0 rgba(0, 0, 0, 0.8), -1px 1px 0 rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
 }
 
 .drink-counter {
@@ -337,7 +337,7 @@ html, body {
   font-size: clamp(32px, 8vw, 64px);
   letter-spacing: 3px;
   color: var(--gold);
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.8), 1px -1px 0 rgba(0, 0, 0, 0.8), -1px 1px 0 rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
   line-height: 1;
 }
 
