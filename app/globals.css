@@ -42,14 +42,15 @@ html, body {
 }
 
 .section {
-  padding: 16px;
+  padding: clamp(10px, 2vw, 16px);
   position: relative;
 }
 
 .section-top {
   flex: 7;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
+  min-height: 0;
   background-color: #3b6e2c;
   background-image: url('/img/Forest-and-Trees-Free-Pixel-Backgrounds2.png');
   background-size: 100% 102%;
@@ -59,12 +60,13 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 8px;
+  padding-top: clamp(4px, 1vh, 8px);
   position: relative;
 }
 
 .section-bottom {
   flex: 3;
+  min-height: 0;
   background:
     linear-gradient(0deg, rgba(45, 27, 78, 0.4) 0%, transparent 60%),
     var(--bg-dark);
@@ -105,7 +107,7 @@ html, body {
 
 .subtitle {
   text-align: center;
-  font-size: 13px;
+  font-size: clamp(10px, 2.5vw, 13px);
   color: var(--text-secondary);
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -264,6 +266,8 @@ html, body {
   justify-content: center;
   gap: clamp(14px, 3vw, 34px);
   flex-wrap: nowrap;
+  flex: 1;
+  min-height: 0;
   margin-top: auto;
   margin-bottom: auto;
 }
@@ -273,8 +277,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-width: 150px;
+  gap: clamp(4px, 1.5vh, 10px);
+  min-width: 0;
   padding-top: 0;
 }
 
@@ -309,9 +313,9 @@ html, body {
 }
 
 .pixel-sprite-label {
-  margin: 4px 0 8px;
+  margin: clamp(2px, 0.5vh, 4px) 0 clamp(4px, 1vh, 8px);
   font-family: var(--font-pixel);
-  font-size: 20px;
+  font-size: clamp(12px, 3vw, 20px);
   letter-spacing: 4px;
   color: #ffffff;
   text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 8px rgba(255, 45, 123, 0.6);
@@ -325,13 +329,13 @@ html, body {
   align-items: center;
   gap: 6px;
   text-align: center;
-  min-width: 110px;
+  min-width: 0;
   flex: 1 1 0;
 }
 
 .counter-label {
   font-family: var(--font-pixel);
-  font-size: 18px;
+  font-size: clamp(12px, 3.5vw, 18px);
   letter-spacing: 4px;
   color: var(--teal);
   text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
@@ -363,6 +367,7 @@ html, body {
 .refresher-btn {
   width: clamp(104px, 26vw, 156px);
   height: clamp(130px, 32vw, 195px);
+  max-height: 85%;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -387,13 +392,6 @@ html, body {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  object-fit: contain;
   pointer-events: none;
-}
-
-/* --- Responsive --- */
-
-@media (max-width: 480px) {
-  .section {
-    padding: 12px 10px;
-  }
 }
