@@ -1,6 +1,25 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import PixelSprite from './PixelSprite';
+
+function useSpriteScale() {
+  const [scale, setScale] = useState(0.7);
+
+  useEffect(() => {
+    function update() {
+      const vh = window.innerHeight;
+      const available = vh * 0.7 - 60;
+      const factor = Math.min(1, Math.max(0.3, (available - 50) / 634.5));
+      setScale(factor);
+    }
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return scale;
+}
 
 export default function Screen({ playing, onAnimationComplete, count, todayCount }) {
   const today = new Date().toLocaleDateString('en-US', {
@@ -8,6 +27,8 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
     day: 'numeric',
     year: 'numeric',
   });
+
+  const spriteScale = useSpriteScale();
 
   return (
     <>
@@ -25,7 +46,7 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
             frameHeight={100}
             frames={5}
             duration={1}
-            scale={4.5}
+            scale={4.5 * spriteScale}
             playing={playing}
           />
           <PixelSprite
@@ -34,7 +55,7 @@ export default function Screen({ playing, onAnimationComplete, count, todayCount
             frameHeight={369}
             frames={8}
             duration={1.4}
-            scale={0.5}
+            scale={0.5 * spriteScale}
             playing={playing}
             onComplete={onAnimationComplete}
             label={playing ? 'RUNNING...' : 'READY'}
