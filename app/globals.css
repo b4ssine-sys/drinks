@@ -97,7 +97,7 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: none;
-  filter: drop-shadow(0 0 12px rgba(255, 45, 123, 0.5));
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(-1px -1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
 }
 
 .subtitle {
@@ -329,7 +329,7 @@ html, body {
   font-size: 12px;
   letter-spacing: 4px;
   color: var(--teal);
-  text-shadow: 0 0 8px rgba(0, 229, 204, 0.4);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.8), 1px -1px 0 rgba(0, 0, 0, 0.8), -1px 1px 0 rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
 }
 
 .drink-counter {
@@ -337,7 +337,7 @@ html, body {
   font-size: clamp(32px, 8vw, 64px);
   letter-spacing: 3px;
   color: var(--gold);
-  text-shadow: 0 0 16px rgba(255, 215, 0, 0.5);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8), -1px -1px 0 rgba(0, 0, 0, 0.8), 1px -1px 0 rgba(0, 0, 0, 0.8), -1px 1px 0 rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
   line-height: 1;
 }
 
