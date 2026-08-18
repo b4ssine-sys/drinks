@@ -10,7 +10,7 @@ export default function Logs() {
     fetch('/api/messages')
       .then((r) => { if (r.ok) return r.json(); throw new Error(); })
       .then((data) => {
-        setMessages(data.slice().reverse());
+        setMessages(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -33,25 +33,49 @@ export default function Logs() {
         {!loading && messages.length === 0 && (
           <div className="logs-empty">No messages yet</div>
         )}
-        {messages.map((m) => (
-          <div key={m.id} className="logs-entry">
-            <div className="logs-entry-meta">
-              <span className="logs-entry-author">{m.author}</span>
-              <span className="logs-entry-time">
-                {new Date(m.timestamp).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                })}
-              </span>
+        {messages.map((m) => {
+          const meta = typeof m.metadata === 'string' ? JSON.parse(m.metadata) : (m.metadata || {});
+          const reactions = typeof m.reactions === 'string' ? JSON.parse(m.reactions) : (m.reactions || []);
+          const attachments = meta.attachments || [];
+
+          return (
+            <div key={m.id} className="logs-entry">
+              <div className="logs-entry-meta">
+                <span className="logs-entry-author">{m.sender_id}</span>
+                <span className="logs-entry-type">[{m.type}]</span>
+                <span className="logs-entry-time">
+                  {new Date(m.created_at).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                  })}
+                </span>
+              </div>
+              <div className="logs-entry-body">{m.content}</div>
+              {attachments.length > 0 && (
+                <div className="logs-entry-attachments">
+                  {attachments.map((a, i) => (
+                    <span key={i} className="logs-attachment">[{a.type}]</span>
+                  ))}
+                </div>
+              )}
+              {reactions.length > 0 && (
+                <div className="logs-entry-reactions">
+                  {reactions.map((r, i) => (
+                    <span key={i} className="logs-reaction">{r.emoji}</span>
+                  ))}
+                </div>
+              )}
+              {m.parent_id && (
+                <div className="logs-entry-reply">reply to {m.parent_id}</div>
+              )}
             </div>
-            <div className="logs-entry-body">{m.body}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <a href="/" className="logs-back">&lt; BACK</a>
     </div>
