@@ -56,13 +56,14 @@ export async function GET(request, { params }) {
   const limit = parseLimit(url.searchParams.get('limit'));
 
   const db = getDbModule();
-  if (db) {
+  if (db && db.getDb()) {
     try {
       await db.initialize();
       const rows = await db.getMessagesByConversation(conversationId, limit);
       return NextResponse.json({ data: rows });
     } catch (err) {
       console.error('DB GET failed:', err.message);
+      return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
     }
   }
 
@@ -92,7 +93,7 @@ export async function POST(request, { params }) {
   const metadata = body.metadata || {};
 
   const db = getDbModule();
-  if (db) {
+  if (db && db.getDb()) {
     try {
       await db.initialize();
       const row = await db.addMessage({
@@ -108,6 +109,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ data: row }, { status: 201 });
     } catch (err) {
       console.error('DB POST failed:', err.message);
+      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 
@@ -144,7 +146,7 @@ export async function PATCH(request, { params }) {
   }
 
   const db = getDbModule();
-  if (db) {
+  if (db && db.getDb()) {
     try {
       await db.initialize();
       const row = await db.toggleReaction(message_id, conversationId, user_id, emoji);
@@ -152,6 +154,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ data: row });
     } catch (err) {
       console.error('DB PATCH failed:', err.message);
+      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 
