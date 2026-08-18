@@ -81,7 +81,7 @@ export async function GET(request) {
   const wantLog = url.searchParams.get('logs') === '1';
 
   const db = getDbModule();
-  if (db) {
+  if (db && db.getDb()) {
     try {
       await db.initialize();
       const dbCount = await db.getDbCount();
@@ -93,6 +93,7 @@ export async function GET(request) {
       return NextResponse.json({ count: dbCount, today: todayCount });
     } catch (err) {
       console.error('DB GET failed:', err.message);
+      return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
     }
   }
 
@@ -120,7 +121,7 @@ export async function POST(request) {
   }
 
   const db = getDbModule();
-  if (db) {
+  if (db && db.getDb()) {
     try {
       await db.initialize();
       const dbCount = await db.incrementAndLog(loggedBy);
@@ -129,6 +130,7 @@ export async function POST(request) {
       return NextResponse.json({ count: dbCount, today: todayCount, logged_by: loggedBy });
     } catch (err) {
       console.error('DB POST failed:', err.message);
+      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 
