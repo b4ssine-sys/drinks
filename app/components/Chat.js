@@ -1,31 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useChat } from '@/hooks/useChat';
 
 const CONV_ID = 'conv_bev_chat';
 
-function generateId() {
-  return 'msg_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
-
 export default function Chat({ author }) {
-  const [messages, setMessages] = useState([]);
+  const { messages, loading, sendMessage, addReaction } = useChat(CONV_ID, author);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const listRef = useRef(null);
-
-  const fetchMessages = useCallback(() => {
-    fetch(`/api/messages?conversation_id=${CONV_ID}`)
-      .then((r) => { if (r.ok) return r.json(); throw new Error(); })
-      .then(setMessages)
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 4000);
-    return () => clearInterval(interval);
-  }, [fetchMessages]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -33,30 +17,14 @@ export default function Chat({ author }) {
     }
   }, [messages]);
 
-  const send = useCallback(() => {
+  const send = useCallback(async () => {
     const text = input.trim();
     if (!text || sending) return;
     setSending(true);
-    fetch('/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        _id: generateId(),
-        conversation_id: CONV_ID,
-        sender_id: author,
-        type: 'text',
-        content: text,
-      }),
-    })
-      .then((r) => { if (r.ok) return r.json(); throw new Error(); })
-      .then((msg) => {
-        setMessages((prev) => [...prev, msg]);
-        setInput('');
-        fetchMessages();
-      })
-      .catch(() => {})
-      .finally(() => setSending(false));
-  }, [input, sending, author, fetchMessages]);
+    setInput('');
+    await sendMessage(text);
+    setSending(false);
+  }, [input, sending, sendMessage]);
 
   const handleKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -71,13 +39,31 @@ export default function Chat({ author }) {
         <span className="chat-title">BEV CHAT</span>
       </div>
       <div className="chat-messages" ref={listRef}>
-        {messages.map((m) => (
-          <div key={m.id} className={`chat-msg ${m.sender_id === author ? 'chat-msg--mine' : ''}`}>
-            <span className="chat-msg-author">{m.sender_id}</span>
-            <span className="chat-msg-body">{m.content}</span>
-          </div>
-        ))}
-        {messages.length === 0 && (
+        {loading && <div className="chat-empty">Loading...</div>}
+        {!loading && messages.map((m) => {
+          const reactions = typeof m.reactions === 'string' ? JSON.parse(m.reactions) : (m.reactions || []);
+          return (
+            <div key={m.id} className={`chat-msg ${m.sender_id === author ? 'chat-msg--mine' : ''}`}>
+              <span className="chat-msg-author">{m.sender_id}</span>
+              <span className="chat-msg-body">{m.content}</span>
+              {reactions.length > 0 && (
+                <span className="chat-msg-reactions">
+                  {reactions.map((r, i) => (
+                    <span key={i} className="chat-reaction">{r.emoji}</span>
+                  ))}
+                </span>
+              )}
+              <button
+                className="chat-react-btn"
+                onClick={() => addReaction(m.id, '👍')}
+                title="React"
+              >
+                +👍
+              </button>
+            </div>
+          );
+        })}
+        {!loading && messages.length === 0 && (
           <div className="chat-empty">No messages yet</div>
         )}
       </div>
