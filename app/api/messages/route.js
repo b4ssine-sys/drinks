@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server';
-import pg from 'pg';
-
-const { Pool } = pg;
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-let pgPool = null;
-
-function getPool() {
-  if (!pgPool && process.env.DATABASE_URL) {
-    pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 5,
-      connectionTimeoutMillis: 5000,
-    });
-  }
-  return pgPool;
-}
+const DATA_DIR = path.join(process.cwd(), '.data');
+const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const MAX_FILE_MESSAGES = 500;
 
 function parseLimit(raw) {
   const n = parseInt(raw, 10);
@@ -28,45 +17,68 @@ function parseLimit(raw) {
 const MAX_CONTENT = 5000;
 const MAX_FIELD = 200;
 
-export async function GET(request) {
-  const pool = getPool();
-  if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
+function getDbModule() {
+  try {
+    return require('@/lib/db');
+  } catch {
+    return null;
+  }
+}
 
+async function readMessagesFile() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const data = await fs.readFile(MESSAGES_FILE, 'utf8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeMessagesFile(messages) {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const trimmed = messages.length > MAX_FILE_MESSAGES
+      ? messages.slice(-MAX_FILE_MESSAGES)
+      : messages;
+    await fs.writeFile(MESSAGES_FILE, JSON.stringify(trimmed));
+  } catch (err) {
+    console.error('Messages file write failed:', err.message);
+  }
+}
+
+export async function GET(request) {
   const url = new URL(request.url);
   const conversationId = url.searchParams.get('conversation_id');
   const limit = parseLimit(url.searchParams.get('limit'));
 
-  try {
-    if (conversationId) {
-      const { rows } = await pool.query(
-        `SELECT id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at
-         FROM messages
-         WHERE conversation_id = $1 AND deleted_at IS NULL
-         ORDER BY created_at ASC
-         LIMIT $2`,
-        [conversationId, limit]
-      );
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      if (conversationId) {
+        const rows = await db.getMessagesByConversation(conversationId, limit);
+        return NextResponse.json(rows);
+      }
+      const rows = await db.getMessages(limit);
       return NextResponse.json(rows);
+    } catch (err) {
+      console.error('DB GET failed:', err.message);
     }
-
-    const { rows } = await pool.query(
-      `SELECT id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at
-       FROM messages
-       WHERE deleted_at IS NULL
-       ORDER BY created_at DESC
-       LIMIT $1`,
-      [limit]
-    );
-    return NextResponse.json(rows.reverse());
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
+
+  const all = await readMessagesFile();
+  if (conversationId) {
+    const filtered = all
+      .filter((m) => m.conversation_id === conversationId && !m.deleted_at)
+      .slice(-limit);
+    return NextResponse.json(filtered);
+  }
+  return NextResponse.json(all.filter((m) => !m.deleted_at).slice(-limit));
 }
 
 export async function POST(request) {
-  const pool = getPool();
-  if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
-
   const body = await request.json().catch(() => null);
 
   const id = String(body?._id || body?.id || '').slice(0, MAX_FIELD);
@@ -81,32 +93,53 @@ export async function POST(request) {
     );
   }
 
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO messages (id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at, updated_at, deleted_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, $8, $9, $10)
-       ON CONFLICT (id) DO UPDATE SET
-         content = EXCLUDED.content,
-         metadata = EXCLUDED.metadata,
-         reactions = EXCLUDED.reactions,
-         updated_at = EXCLUDED.updated_at,
-         deleted_at = EXCLUDED.deleted_at
-       RETURNING *`,
-      [
+  const msgType = body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text';
+  const parent_id = body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null;
+  const metadata = body.metadata || {};
+
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const row = await db.addMessage({
         id,
         conversation_id,
         sender_id,
-        body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null,
-        body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text',
+        parent_id,
+        type: msgType,
         content,
-        body.metadata || {},
-        body.created_at || new Date().toISOString(),
-        body.updated_at || null,
-        body.deleted_at || null,
-      ]
-    );
-    return NextResponse.json(rows[0], { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+        metadata,
+        reactions: [],
+        created_at: body.created_at || new Date().toISOString(),
+        updated_at: body.updated_at || null,
+        deleted_at: body.deleted_at || null,
+      });
+      return NextResponse.json(row, { status: 201 });
+    } catch (err) {
+      console.error('DB POST failed:', err.message);
+    }
   }
+
+  const msg = {
+    id,
+    conversation_id,
+    sender_id,
+    parent_id,
+    type: msgType,
+    content,
+    metadata,
+    reactions: [],
+    created_at: body.created_at || new Date().toISOString(),
+    updated_at: body.updated_at || null,
+    deleted_at: body.deleted_at || null,
+  };
+  const all = await readMessagesFile();
+  const existingIdx = all.findIndex((m) => m.id === id);
+  if (existingIdx >= 0) {
+    all[existingIdx] = { ...all[existingIdx], content, metadata, updated_at: msg.updated_at, deleted_at: msg.deleted_at };
+  } else {
+    all.push(msg);
+  }
+  await writeMessagesFile(all);
+  return NextResponse.json(existingIdx >= 0 ? all[existingIdx] : msg, { status: 201 });
 }

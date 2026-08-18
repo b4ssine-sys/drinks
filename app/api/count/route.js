@@ -15,44 +15,6 @@ async function ensureDataDir() {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
-let pgPool = null;
-let tableReady = false;
-
-function getPool() {
-  if (!pgPool && process.env.DATABASE_URL) {
-    const { Pool } = require('pg');
-    pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 5,
-      connectionTimeoutMillis: 10000,
-      idleTimeoutMillis: 20000,
-    });
-  }
-  return pgPool;
-}
-
-async function ensureTable(pool) {
-  if (!tableReady) {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS drink_counter (
-        id    INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-        count INTEGER NOT NULL DEFAULT 0
-      )
-    `);
-    await pool.query(`INSERT INTO drink_counter (id, count) VALUES (1, 0) ON CONFLICT DO NOTHING`);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS drink_click_log (
-        id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
-        logged_by TEXT NOT NULL,
-        count     INTEGER NOT NULL
-      )
-    `);
-    tableReady = true;
-  }
-}
-
 async function readFile() {
   try {
     const data = await fs.readFile(COUNTER_FILE, 'utf8');
@@ -106,55 +68,32 @@ async function appendClickLog(loggedBy, count) {
   }
 }
 
-async function getCountFromDb() {
-  const pool = getPool();
-  if (!pool) return null;
-  await ensureTable(pool);
-  const { rows } = await pool.query('SELECT count FROM drink_counter WHERE id = 1');
-  return rows[0]?.count ?? 0;
-}
-
-async function getTodayCountFromDb() {
-  const pool = getPool();
-  if (!pool) return null;
-  await ensureTable(pool);
-  const { rows } = await pool.query(
-    'SELECT COUNT(*)::int AS today FROM drink_click_log WHERE timestamp >= CURRENT_DATE'
-  );
-  return rows[0]?.today ?? 0;
-}
-
-async function incrementInDb(loggedBy) {
-  const pool = getPool();
-  if (!pool) return null;
-  await ensureTable(pool);
-  const { rows } = await pool.query(
-    'UPDATE drink_counter SET count = count + 1 WHERE id = 1 RETURNING count'
-  );
-  const count = rows[0].count;
-  await pool.query(
-    'INSERT INTO drink_click_log (logged_by, count) VALUES ($1, $2)',
-    [loggedBy, count]
-  );
-  return count;
+function getDbModule() {
+  try {
+    return require('@/lib/db');
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request) {
   const url = new URL(request.url);
   const wantLog = url.searchParams.get('logs') === '1';
 
-  try {
-    const dbCount = await getCountFromDb();
-    if (dbCount !== null) {
-      const todayCount = await getTodayCountFromDb();
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const dbCount = await db.getDbCount();
+      const todayCount = await db.getTodayClickCount();
       if (wantLog) {
-        const entries = await getRecentLogEntries();
+        const entries = await db.getRecentLogs();
         return NextResponse.json({ count: dbCount, today: todayCount, log: entries });
       }
       return NextResponse.json({ count: dbCount, today: todayCount });
+    } catch (err) {
+      console.error('DB GET failed:', err.message);
     }
-  } catch (err) {
-    console.error('DB GET failed:', err.message);
   }
 
   const count = await readFile();
@@ -170,20 +109,6 @@ export async function GET(request) {
   return NextResponse.json({ count, today: memoryTodayCount });
 }
 
-async function getRecentLogEntries() {
-  const pool = getPool();
-  if (!pool) return [];
-  try {
-    await ensureTable(pool);
-    const { rows } = await pool.query(
-      'SELECT logged_by, count, timestamp FROM drink_click_log ORDER BY timestamp DESC LIMIT 50'
-    );
-    return rows;
-  } catch {
-    return [];
-  }
-}
-
 export async function POST(request) {
   let loggedBy = 'unknown';
 
@@ -194,15 +119,17 @@ export async function POST(request) {
     loggedBy = 'unknown';
   }
 
-  try {
-    const dbCount = await incrementInDb(loggedBy);
-    if (dbCount !== null) {
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const dbCount = await db.incrementAndLog(loggedBy);
       await writeFile(dbCount);
-      const todayCount = await getTodayCountFromDb();
+      const todayCount = await db.getTodayClickCount();
       return NextResponse.json({ count: dbCount, today: todayCount, logged_by: loggedBy });
+    } catch (err) {
+      console.error('DB POST failed:', err.message);
     }
-  } catch (err) {
-    console.error('DB POST failed:', err.message);
   }
 
   const previousCount = await readFile();
