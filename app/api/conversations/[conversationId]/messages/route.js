@@ -19,13 +19,24 @@ function getPool() {
   return pgPool;
 }
 
+function parseLimit(raw) {
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1) return 50;
+  return Math.min(n, 200);
+}
+
+const MAX_CONTENT = 5000;
+const MAX_FIELD = 200;
+
 export async function GET(request, { params }) {
   const pool = getPool();
   if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
 
   const { conversationId } = await params;
+  if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
+
   const url = new URL(request.url);
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
+  const limit = parseLimit(url.searchParams.get('limit'));
 
   try {
     const { rows } = await pool.query(
@@ -47,10 +58,13 @@ export async function POST(request, { params }) {
   if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
 
   const { conversationId } = await params;
+  if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
+
   const body = await request.json().catch(() => null);
 
-  const id = body?._id || body?.id;
-  const { sender_id, content } = body || {};
+  const id = String(body?._id || body?.id || '').slice(0, MAX_FIELD);
+  const sender_id = String(body?.sender_id || '').slice(0, MAX_FIELD);
+  const content = String(body?.content || '').slice(0, MAX_CONTENT);
 
   if (!id || !sender_id || !content) {
     return NextResponse.json({ error: 'Required: _id (or id), sender_id, content' }, { status: 400 });
@@ -61,7 +75,15 @@ export async function POST(request, { params }) {
       `INSERT INTO messages (id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, now())
        RETURNING *`,
-      [id, conversationId, sender_id, body.parent_id || null, body.type || 'text', content, body.metadata || {}]
+      [
+        id,
+        conversationId,
+        sender_id,
+        body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null,
+        body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text',
+        content,
+        body.metadata || {},
+      ]
     );
     return NextResponse.json({ data: rows[0] }, { status: 201 });
   } catch (err) {
@@ -74,8 +96,12 @@ export async function PATCH(request, { params }) {
   if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
 
   const { conversationId } = await params;
+  if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
+
   const body = await request.json().catch(() => null);
-  const { message_id, user_id, emoji } = body || {};
+  const message_id = String(body?.message_id || '').slice(0, MAX_FIELD);
+  const user_id = String(body?.user_id || '').slice(0, MAX_FIELD);
+  const emoji = String(body?.emoji || '').slice(0, 32);
 
   if (!message_id || !user_id || !emoji) {
     return NextResponse.json({ error: 'Required: message_id, user_id, emoji' }, { status: 400 });

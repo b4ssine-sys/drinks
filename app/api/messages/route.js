@@ -19,13 +19,22 @@ function getPool() {
   return pgPool;
 }
 
+function parseLimit(raw) {
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1) return 50;
+  return Math.min(n, 200);
+}
+
+const MAX_CONTENT = 5000;
+const MAX_FIELD = 200;
+
 export async function GET(request) {
   const pool = getPool();
   if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
 
   const url = new URL(request.url);
   const conversationId = url.searchParams.get('conversation_id');
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
+  const limit = parseLimit(url.searchParams.get('limit'));
 
   try {
     if (conversationId) {
@@ -60,8 +69,10 @@ export async function POST(request) {
 
   const body = await request.json().catch(() => null);
 
-  const id = body?._id || body?.id;
-  const { conversation_id, sender_id, content } = body || {};
+  const id = String(body?._id || body?.id || '').slice(0, MAX_FIELD);
+  const conversation_id = String(body?.conversation_id || '').slice(0, MAX_FIELD);
+  const sender_id = String(body?.sender_id || '').slice(0, MAX_FIELD);
+  const content = String(body?.content || '').slice(0, MAX_CONTENT);
 
   if (!id || !conversation_id || !sender_id || !content) {
     return NextResponse.json(
@@ -85,8 +96,8 @@ export async function POST(request) {
         id,
         conversation_id,
         sender_id,
-        body.parent_id || null,
-        body.type || 'text',
+        body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null,
+        body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text',
         content,
         body.metadata || {},
         body.created_at || new Date().toISOString(),

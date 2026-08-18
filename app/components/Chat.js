@@ -6,9 +6,9 @@ import { useChat } from '@/hooks/useChat';
 const CONV_ID = 'conv_bev_chat';
 
 export default function Chat({ author }) {
-  const { messages, loading, sendMessage, addReaction } = useChat(CONV_ID, author);
+  const { messages, loading, error, sendMessage, addReaction, clearError } = useChat(CONV_ID, author);
   const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -19,12 +19,13 @@ export default function Chat({ author }) {
 
   const send = useCallback(async () => {
     const text = input.trim();
-    if (!text || sending) return;
-    setSending(true);
+    if (!text || sendingRef.current) return;
+    sendingRef.current = true;
+    clearError();
     setInput('');
     await sendMessage(text);
-    setSending(false);
-  }, [input, sending, sendMessage]);
+    sendingRef.current = false;
+  }, [input, sendMessage, clearError]);
 
   const handleKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -67,6 +68,9 @@ export default function Chat({ author }) {
         {!loading && messages.length === 0 && (
           <div className="chat-empty">No messages yet</div>
         )}
+        {error && (
+          <div className="chat-error" onClick={clearError}>{error}</div>
+        )}
       </div>
       <div className="chat-input-row">
         <input
@@ -76,7 +80,7 @@ export default function Chat({ author }) {
           onKeyDown={handleKey}
           placeholder="Say something..."
         />
-        <button className="chat-send" onClick={send} disabled={sending || !input.trim()}>
+        <button className="chat-send" onClick={send} disabled={!input.trim()}>
           &gt;
         </button>
       </div>
