@@ -66,7 +66,6 @@ export async function GET() {
       return NextResponse.json(rows.reverse());
     } catch (err) {
       console.error('DB GET failed:', err.message);
-      return NextResponse.json({ error: err.message }, { status: 500 });
     }
   }
 
@@ -104,7 +103,6 @@ export async function POST(request) {
       return NextResponse.json(rows[0], { status: 201 });
     } catch (err) {
       console.error('DB POST failed:', err.message);
-      return NextResponse.json({ error: err.message }, { status: 500 });
     }
   }
 
