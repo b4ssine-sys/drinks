@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server';
-import pg from 'pg';
-
-const { Pool } = pg;
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-let pgPool = null;
-
-function getPool() {
-  if (!pgPool && process.env.DATABASE_URL) {
-    pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 5,
-      connectionTimeoutMillis: 5000,
-    });
-  }
-  return pgPool;
-}
+const DATA_DIR = path.join(process.cwd(), '.data');
+const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const MAX_FILE_MESSAGES = 500;
 
 function parseLimit(raw) {
   const n = parseInt(raw, 10);
@@ -28,35 +17,63 @@ function parseLimit(raw) {
 const MAX_CONTENT = 5000;
 const MAX_FIELD = 200;
 
-export async function GET(request, { params }) {
-  const pool = getPool();
-  if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
+function getDbModule() {
+  try {
+    return require('@/lib/db');
+  } catch {
+    return null;
+  }
+}
 
+async function readMessagesFile() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const data = await fs.readFile(MESSAGES_FILE, 'utf8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeMessagesFile(messages) {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const trimmed = messages.length > MAX_FILE_MESSAGES
+      ? messages.slice(-MAX_FILE_MESSAGES)
+      : messages;
+    await fs.writeFile(MESSAGES_FILE, JSON.stringify(trimmed));
+  } catch (err) {
+    console.error('Messages file write failed:', err.message);
+  }
+}
+
+export async function GET(request, { params }) {
   const { conversationId } = await params;
   if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
 
   const url = new URL(request.url);
   const limit = parseLimit(url.searchParams.get('limit'));
 
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at
-       FROM messages
-       WHERE conversation_id = $1 AND deleted_at IS NULL
-       ORDER BY created_at ASC
-       LIMIT $2`,
-      [conversationId, limit]
-    );
-    return NextResponse.json({ data: rows });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const rows = await db.getMessagesByConversation(conversationId, limit);
+      return NextResponse.json({ data: rows });
+    } catch (err) {
+      console.error('DB GET failed:', err.message);
+    }
   }
+
+  const all = await readMessagesFile();
+  const filtered = all
+    .filter((m) => m.conversation_id === conversationId && !m.deleted_at)
+    .slice(-limit);
+  return NextResponse.json({ data: filtered });
 }
 
 export async function POST(request, { params }) {
-  const pool = getPool();
-  if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
-
   const { conversationId } = await params;
   if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
 
@@ -70,31 +87,50 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'Required: _id (or id), sender_id, content' }, { status: 400 });
   }
 
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO messages (id, conversation_id, sender_id, parent_id, type, content, metadata, reactions, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, now())
-       RETURNING *`,
-      [
+  const msgType = body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text';
+  const parent_id = body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null;
+  const metadata = body.metadata || {};
+
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const row = await db.addMessage({
         id,
-        conversationId,
+        conversation_id: conversationId,
         sender_id,
-        body.parent_id ? String(body.parent_id).slice(0, MAX_FIELD) : null,
-        body.type === 'image' || body.type === 'file' || body.type === 'system' ? body.type : 'text',
+        parent_id,
+        type: msgType,
         content,
-        body.metadata || {},
-      ]
-    );
-    return NextResponse.json({ data: rows[0] }, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+        metadata,
+        reactions: [],
+      });
+      return NextResponse.json({ data: row }, { status: 201 });
+    } catch (err) {
+      console.error('DB POST failed:', err.message);
+    }
   }
+
+  const msg = {
+    id,
+    conversation_id: conversationId,
+    sender_id,
+    parent_id,
+    type: msgType,
+    content,
+    metadata,
+    reactions: [],
+    created_at: new Date().toISOString(),
+    updated_at: null,
+    deleted_at: null,
+  };
+  const all = await readMessagesFile();
+  all.push(msg);
+  await writeMessagesFile(all);
+  return NextResponse.json({ data: msg }, { status: 201 });
 }
 
 export async function PATCH(request, { params }) {
-  const pool = getPool();
-  if (!pool) return NextResponse.json({ error: 'No database configured' }, { status: 503 });
-
   const { conversationId } = await params;
   if (!conversationId) return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
 
@@ -107,38 +143,33 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Required: message_id, user_id, emoji' }, { status: 400 });
   }
 
-  try {
-    const { rows } = await pool.query(
-      `WITH current_msg AS (
-         SELECT reactions FROM messages WHERE id = $1 AND conversation_id = $2 AND deleted_at IS NULL
-       ),
-       updated_reactions AS (
-         SELECT
-           CASE
-             WHEN EXISTS (
-               SELECT 1 FROM jsonb_array_elements(reactions) elem
-               WHERE elem->>'user_id' = $3 AND elem->>'emoji' = $4
-             )
-             THEN (
-               SELECT coalesce(jsonb_agg(elem), '[]'::jsonb)
-               FROM jsonb_array_elements(reactions) elem
-               WHERE NOT (elem->>'user_id' = $3 AND elem->>'emoji' = $4)
-             )
-             ELSE reactions || jsonb_build_object('user_id', $3, 'emoji', $4)::jsonb
-           END AS new_reactions
-         FROM current_msg
-       )
-       UPDATE messages
-       SET reactions = updated_reactions.new_reactions, updated_at = now()
-       FROM updated_reactions
-       WHERE id = $1 AND conversation_id = $2
-       RETURNING messages.*;`,
-      [message_id, conversationId, user_id, emoji]
-    );
-
-    if (rows.length === 0) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
-    return NextResponse.json({ data: rows[0] });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  const db = getDbModule();
+  if (db) {
+    try {
+      await db.initialize();
+      const row = await db.toggleReaction(message_id, conversationId, user_id, emoji);
+      if (!row) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+      return NextResponse.json({ data: row });
+    } catch (err) {
+      console.error('DB PATCH failed:', err.message);
+    }
   }
+
+  const all = await readMessagesFile();
+  const idx = all.findIndex((m) => m.id === message_id && m.conversation_id === conversationId && !m.deleted_at);
+  if (idx === -1) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+
+  const msg = all[idx];
+  const reactions = Array.isArray(msg.reactions) ? msg.reactions : [];
+  const existing = reactions.findIndex((r) => r.user_id === user_id && r.emoji === emoji);
+  if (existing >= 0) {
+    reactions.splice(existing, 1);
+  } else {
+    reactions.push({ user_id, emoji });
+  }
+  msg.reactions = reactions;
+  msg.updated_at = new Date().toISOString();
+  all[idx] = msg;
+  await writeMessagesFile(all);
+  return NextResponse.json({ data: msg });
 }
