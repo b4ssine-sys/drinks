@@ -41,9 +41,10 @@ export default function Chat({ author }) {
       <div className="chat-messages" ref={listRef}>
         {loading && <div className="chat-empty">Loading...</div>}
         {!loading && messages.map((m) => {
+          const msgId = m.id || m._id;
           const reactions = typeof m.reactions === 'string' ? JSON.parse(m.reactions) : (m.reactions || []);
           return (
-            <div key={m.id} className={`chat-msg ${m.sender_id === author ? 'chat-msg--mine' : ''}`}>
+            <div key={msgId} className={`chat-msg ${m.sender_id === author ? 'chat-msg--mine' : ''}`}>
               <span className="chat-msg-author">{m.sender_id}</span>
               <span className="chat-msg-body">{m.content}</span>
               {reactions.length > 0 && (
@@ -55,7 +56,7 @@ export default function Chat({ author }) {
               )}
               <button
                 className="chat-react-btn"
-                onClick={() => addReaction(m.id, '👍')}
+                onClick={() => addReaction(msgId, '👍')}
                 title="React"
               >
                 +👍
