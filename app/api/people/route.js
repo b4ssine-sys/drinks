@@ -22,7 +22,11 @@ export async function GET() {
 export async function POST(request) {
   try {
     await ensureInit();
-    const { id, name, avatar, default_bev } = await request.json();
+    const body = await request.json();
+    const id = String(body.id || '').slice(0, 100);
+    const name = String(body.name || '').slice(0, 100);
+    const avatar = body.avatar ? String(body.avatar).slice(0, 500) : undefined;
+    const default_bev = body.default_bev ? String(body.default_bev).slice(0, 100) : undefined;
     if (!id || !name) return NextResponse.json({ error: 'id and name required' }, { status: 400 });
     const person = await db.addPerson(id, name, avatar, default_bev);
     return NextResponse.json(person, { status: 201 });

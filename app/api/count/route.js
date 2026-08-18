@@ -5,6 +5,7 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), '.data');
 const COUNTER_FILE = path.join(DATA_DIR, 'drink-count.json');
 const CLICK_LOG_FILE = path.join(DATA_DIR, 'drink-click-log.json');
+const MAX_LOG_ENTRIES = 500;
 
 let memoryCount = null;
 let memoryTodayCount = 0;
@@ -23,7 +24,7 @@ function getPool() {
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      max: 1,
+      max: 5,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 20000,
     });
@@ -55,7 +56,8 @@ async function ensureTable(pool) {
 async function readFile() {
   try {
     const data = await fs.readFile(COUNTER_FILE, 'utf8');
-    const count = JSON.parse(data).count ?? 0;
+    const parsed = JSON.parse(data);
+    const count = typeof parsed.count === 'number' && Number.isFinite(parsed.count) ? parsed.count : 0;
     if (memoryCount === null) memoryCount = count;
     return count;
   } catch {
@@ -68,14 +70,18 @@ async function writeFile(count) {
   try {
     await ensureDataDir();
     await fs.writeFile(COUNTER_FILE, JSON.stringify({ count }));
-  } catch {}
+  } catch (err) {
+    console.error('Counter file write failed:', err.message);
+  }
 }
 
 async function readClickLog() {
   try {
     await ensureDataDir();
     const data = await fs.readFile(CLICK_LOG_FILE, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
   } catch {
     return [];
   }
@@ -84,14 +90,20 @@ async function readClickLog() {
 async function appendClickLog(loggedBy, count) {
   try {
     await ensureDataDir();
-    const current = await readClickLog();
+    let current = await readClickLog();
     const entry = {
       timestamp: new Date().toISOString(),
       logged_by: loggedBy,
       count,
     };
-    await fs.writeFile(CLICK_LOG_FILE, JSON.stringify([...current, entry]));
-  } catch {}
+    current.push(entry);
+    if (current.length > MAX_LOG_ENTRIES) {
+      current = current.slice(-MAX_LOG_ENTRIES);
+    }
+    await fs.writeFile(CLICK_LOG_FILE, JSON.stringify(current));
+  } catch (err) {
+    console.error('Click log write failed:', err.message);
+  }
 }
 
 async function getCountFromDb() {
@@ -122,7 +134,7 @@ async function incrementInDb(loggedBy) {
   const count = rows[0].count;
   await pool.query(
     'INSERT INTO drink_click_log (logged_by, count) VALUES ($1, $2)',
-    [loggedBy || 'unknown', count]
+    [loggedBy, count]
   );
   return count;
 }
@@ -153,7 +165,7 @@ export async function GET(request) {
   }
   if (wantLog) {
     const log = await readClickLog();
-    return NextResponse.json({ count, today: memoryTodayCount, log });
+    return NextResponse.json({ count, today: memoryTodayCount, log: log.slice(-50) });
   }
   return NextResponse.json({ count, today: memoryTodayCount });
 }
@@ -173,12 +185,11 @@ async function getRecentLogEntries() {
 }
 
 export async function POST(request) {
-  let body = {};
   let loggedBy = 'unknown';
 
   try {
-    body = await request.json().catch(() => ({}));
-    loggedBy = String(body.logged_by || 'unknown').trim() || 'unknown';
+    const body = await request.json().catch(() => ({}));
+    loggedBy = String(body.logged_by || 'unknown').trim().slice(0, 100) || 'unknown';
   } catch {
     loggedBy = 'unknown';
   }

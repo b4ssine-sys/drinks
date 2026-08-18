@@ -9,6 +9,7 @@ function generateId() {
 export function useChat(conversationId, currentUserId) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const pollRef = useRef(null);
 
   const fetchHistory = useCallback(async () => {
@@ -50,7 +51,7 @@ export function useChat(conversationId, currentUserId) {
       const { data } = await res.json();
       setMessages((prev) => [...prev, data]);
     } catch {
-      // silent
+      setError('Failed to send message');
     }
   }, [conversationId, currentUserId]);
 
@@ -75,5 +76,7 @@ export function useChat(conversationId, currentUserId) {
     }
   }, [conversationId, currentUserId]);
 
-  return { messages, loading, sendMessage, addReaction };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { messages, loading, error, sendMessage, addReaction, clearError };
 }

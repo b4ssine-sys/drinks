@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Screen from './components/Screen';
 import CircleButton from './components/CircleButton';
 import IdentityModal from './components/IdentityModal';
@@ -10,6 +10,7 @@ const STORAGE_KEY = 'drinks-logged-by';
 
 export default function Home() {
   const [playing, setPlaying] = useState(false);
+  const clickingRef = useRef(false);
   const [count, setCount] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [loggedBy, setLoggedBy] = useState('');
@@ -46,7 +47,8 @@ export default function Home() {
   }, []);
 
   const handleClick = useCallback(() => {
-    if (playing) return;
+    if (playing || clickingRef.current) return;
+    clickingRef.current = true;
     setPlaying(true);
     setTimeout(() => setPlaying(false), 2000);
     const actor = loggedBy || 'unknown';
@@ -62,7 +64,8 @@ export default function Home() {
         setCount(data.count);
         if (data.today != null) setTodayCount(data.today);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { clickingRef.current = false; });
   }, [playing, loggedBy]);
 
   const handleAnimationComplete = useCallback(() => {
