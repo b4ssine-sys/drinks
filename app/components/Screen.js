@@ -3,26 +3,28 @@
 import { useState, useEffect, useRef } from 'react';
 import PixelSprite from './PixelSprite';
 
-function useSpriteScale() {
-  const [scale, setScale] = useState(0.7);
+function useSpriteScales() {
+  const [scales, setScales] = useState({ runner: 1, bev: 3 });
 
   useEffect(() => {
     function update() {
       const vh = window.innerHeight;
-      const available = vh * 0.7 - 60;
-      const factor = Math.min(1, Math.max(0.3, (available - 50) / 634.5));
-      setScale(factor);
+      const sectionTopHeight = vh * 0.7;
+      const targetRunnerHeight = sectionTopHeight * 0.75;
+      const runnerScale = Math.max(0.4, targetRunnerHeight / 369);
+      const bevScale = Math.max(1.5, Math.min(4, sectionTopHeight * 0.35 / 100));
+      setScales({ runner: runnerScale, bev: bevScale });
     }
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  return scale;
+  return scales;
 }
 
 export default function Screen({ playing, onAnimationComplete, todayCount }) {
-  const spriteScale = useSpriteScale();
+  const { runner: runnerScale, bev: bevScale } = useSpriteScales();
 
   const titleText = `JAYS BEV COUNT`;
   const chars = titleText.split('');
@@ -76,34 +78,35 @@ export default function Screen({ playing, onAnimationComplete, todayCount }) {
         })}
       </h1>
       <div className="hero-row">
-        <div className="counter-panel" aria-label="Today's drink counter">
-          <span className="counter-label">TODAY</span>
-          <span className="drink-counter">{todayCount}</span>
-        </div>
-
-        <div className="center-visual">
-          <PixelSprite
-            spriteSheetSrc="/img/drink-sprite.svg"
-            frameWidth={64}
-            frameHeight={100}
-            frames={5}
-            duration={1}
-            scale={4.5 * spriteScale}
-            playing={playing}
-          />
+        <div className="hero-left">
           <PixelSprite
             spriteSheetSrc="/img/running-combined.png"
             frameWidth={169.25}
             frameHeight={369}
             frames={8}
             duration={1.4}
-            scale={0.5 * spriteScale}
+            scale={runnerScale}
             playing={playing}
             onComplete={onAnimationComplete}
             label={playing ? 'RUNNING...' : 'READY'}
           />
         </div>
 
+        <div className="hero-right">
+          <PixelSprite
+            spriteSheetSrc="/img/drink-sprite.svg"
+            frameWidth={64}
+            frameHeight={100}
+            frames={5}
+            duration={1}
+            scale={bevScale}
+            playing={playing}
+          />
+          <div className="counter-panel" aria-label="Today's drink counter">
+            <span className="counter-label">TODAY</span>
+            <span className="drink-counter">{todayCount}</span>
+          </div>
+        </div>
       </div>
     </>
   );
