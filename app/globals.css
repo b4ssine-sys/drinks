@@ -353,8 +353,10 @@ html, body {
 
 .hero-left {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: clamp(8px, 2vh, 16px);
   min-height: 0;
 }
 
@@ -362,10 +364,9 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: clamp(8px, 2vh, 16px);
+  justify-content: center;
   min-height: 0;
-  padding-bottom: clamp(16px, 4vh, 40px);
+  overflow: hidden;
 }
 
 .counter-panel {

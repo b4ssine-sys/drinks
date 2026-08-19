@@ -80,20 +80,6 @@ export default function Screen({ playing, onAnimationComplete, todayCount }) {
       <div className="hero-row">
         <div className="hero-left">
           <PixelSprite
-            spriteSheetSrc="/img/running-combined.png"
-            frameWidth={169.25}
-            frameHeight={369}
-            frames={8}
-            duration={1.4}
-            scale={runnerScale}
-            playing={playing}
-            onComplete={onAnimationComplete}
-            label={playing ? 'RUNNING...' : 'READY'}
-          />
-        </div>
-
-        <div className="hero-right">
-          <PixelSprite
             spriteSheetSrc="/img/drink-sprite.svg"
             frameWidth={64}
             frameHeight={100}
@@ -106,6 +92,20 @@ export default function Screen({ playing, onAnimationComplete, todayCount }) {
             <span className="counter-label">TODAY</span>
             <span className="drink-counter">{todayCount}</span>
           </div>
+        </div>
+
+        <div className="hero-right">
+          <PixelSprite
+            spriteSheetSrc="/img/running-combined.png"
+            frameWidth={169.25}
+            frameHeight={369}
+            frames={8}
+            duration={1.4}
+            scale={runnerScale}
+            playing={playing}
+            onComplete={onAnimationComplete}
+            label={playing ? 'RUNNING...' : 'READY'}
+          />
         </div>
       </div>
     </>

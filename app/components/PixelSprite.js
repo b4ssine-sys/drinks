@@ -22,7 +22,6 @@ export default function PixelSprite({
 
   return (
     <div className="pixel-sprite-wrapper">
-      {label && <span className="pixel-sprite-label">{label}</span>}
       <div
         className={`pixel-sprite ${playing ? 'pixel-sprite--playing' : ''}`}
         onAnimationEnd={handleAnimationEnd}
@@ -38,6 +37,7 @@ export default function PixelSprite({
           '--sprite-end-x': `-${frames * scaledWidth}px`,
         }}
       />
+      {label && <span className="pixel-sprite-label">{label}</span>}
     </div>
   );
 }
