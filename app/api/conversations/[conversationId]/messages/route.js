@@ -56,22 +56,18 @@ export async function GET(request, { params }) {
   const limit = parseLimit(url.searchParams.get('limit'));
 
   const db = getDbModule();
-  if (db && db.getDb()) {
-    try {
-      await db.initialize();
-      const rows = await db.getMessagesByConversation(conversationId, limit);
-      return NextResponse.json({ data: rows });
-    } catch (err) {
-      console.error('DB GET failed:', err.message);
-      return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
-    }
+  if (!db || !db.getDb()) {
+    return NextResponse.json({ data: [] });
   }
 
-  const all = await readMessagesFile();
-  const filtered = all
-    .filter((m) => m.conversation_id === conversationId && !m.deleted_at)
-    .slice(-limit);
-  return NextResponse.json({ data: filtered });
+  try {
+    await db.initialize();
+    const rows = await db.getMessagesByConversation(conversationId, limit);
+    return NextResponse.json({ data: rows });
+  } catch (err) {
+    console.error('DB GET failed:', err.message);
+    return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
+  }
 }
 
 export async function POST(request, { params }) {
