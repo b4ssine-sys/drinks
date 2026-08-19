@@ -130,7 +130,6 @@ export async function POST(request) {
       return NextResponse.json({ count: dbCount, today: todayCount, logged_by: loggedBy });
     } catch (err) {
       console.error('DB POST failed:', err.message);
-      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 

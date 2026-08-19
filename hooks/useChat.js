@@ -32,26 +32,32 @@ export function useChat(conversationId, currentUserId) {
   }, [fetchHistory]);
 
   const sendMessage = useCallback(async (content, attachments = []) => {
-    const msg = {
-      _id: generateId(),
+    const id = generateId();
+    const optimistic = {
+      id,
+      _id: id,
       conversation_id: conversationId,
       sender_id: currentUserId,
       type: 'text',
       content,
       metadata: attachments.length ? { attachments } : {},
+      reactions: [],
+      created_at: new Date().toISOString(),
     };
+
+    setMessages((prev) => [...prev, optimistic]);
 
     try {
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(msg),
+        body: JSON.stringify(optimistic),
       });
       if (!res.ok) throw new Error();
       const { data } = await res.json();
-      setMessages((prev) => [...prev, data]);
+      setMessages((prev) => prev.map((m) => (m.id === id ? data : m)));
     } catch {
-      setError('Failed to send message');
+      setError('Failed to send — tap to dismiss');
     }
   }, [conversationId, currentUserId]);
 
