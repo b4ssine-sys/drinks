@@ -109,7 +109,6 @@ export async function POST(request, { params }) {
       return NextResponse.json({ data: row }, { status: 201 });
     } catch (err) {
       console.error('DB POST failed:', err.message);
-      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 
@@ -154,7 +153,6 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ data: row });
     } catch (err) {
       console.error('DB PATCH failed:', err.message);
-      return NextResponse.json({ error: 'Database write failed' }, { status: 502 });
     }
   }
 
