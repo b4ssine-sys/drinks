@@ -54,29 +54,22 @@ export async function GET(request) {
   const limit = parseLimit(url.searchParams.get('limit'));
 
   const db = getDbModule();
-  if (db && db.getDb()) {
-    try {
-      await db.initialize();
-      if (conversationId) {
-        const rows = await db.getMessagesByConversation(conversationId, limit);
-        return NextResponse.json(rows);
-      }
-      const rows = await db.getMessages(limit);
-      return NextResponse.json(rows);
-    } catch (err) {
-      console.error('DB GET failed:', err.message);
-      return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
-    }
+  if (!db || !db.getDb()) {
+    return NextResponse.json([]);
   }
 
-  const all = await readMessagesFile();
-  if (conversationId) {
-    const filtered = all
-      .filter((m) => m.conversation_id === conversationId && !m.deleted_at)
-      .slice(-limit);
-    return NextResponse.json(filtered);
+  try {
+    await db.initialize();
+    if (conversationId) {
+      const rows = await db.getMessagesByConversation(conversationId, limit);
+      return NextResponse.json(rows);
+    }
+    const rows = await db.getMessages(limit);
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error('DB GET failed:', err.message);
+    return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
   }
-  return NextResponse.json(all.filter((m) => !m.deleted_at).slice(-limit));
 }
 
 export async function POST(request) {
