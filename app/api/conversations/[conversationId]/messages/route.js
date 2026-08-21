@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
-const MAX_FILE_MESSAGES = 500;
+const MAX_CONTENT = 5000;
+const MAX_FIELD = 200;
 
 function parseLimit(raw) {
   const n = parseInt(raw, 10);
@@ -14,37 +11,11 @@ function parseLimit(raw) {
   return Math.min(n, 200);
 }
 
-const MAX_CONTENT = 5000;
-const MAX_FIELD = 200;
-
 function getDbModule() {
   try {
     return require('@/lib/db');
   } catch {
     return null;
-  }
-}
-
-async function readMessagesFile() {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const data = await fs.readFile(MESSAGES_FILE, 'utf8');
-    const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeMessagesFile(messages) {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const trimmed = messages.length > MAX_FILE_MESSAGES
-      ? messages.slice(-MAX_FILE_MESSAGES)
-      : messages;
-    await fs.writeFile(MESSAGES_FILE, JSON.stringify(trimmed));
-  } catch (err) {
-    console.error('Messages file write failed:', err.message);
   }
 }
 
@@ -56,17 +27,23 @@ export async function GET(request, { params }) {
   const limit = parseLimit(url.searchParams.get('limit'));
 
   const db = getDbModule();
-  if (!db || !db.getDb()) {
-    return NextResponse.json({ data: [] });
+  if (!db) {
+    return NextResponse.json({ error: 'Database module not found' }, { status: 502 });
   }
 
   try {
     await db.initialize();
+    const dbType = db.getDb();
+    
+    if (!dbType) {
+      return NextResponse.json({ error: 'No database configured' }, { status: 502 });
+    }
+
     const rows = await db.getMessagesByConversation(conversationId, limit);
     return NextResponse.json({ data: rows });
   } catch (err) {
     console.error('DB GET failed:', err.message);
-    return NextResponse.json({ error: 'Database read failed' }, { status: 502 });
+    return NextResponse.json({ error: 'Database read failed', details: err.message }, { status: 502 });
   }
 }
 
@@ -89,42 +66,33 @@ export async function POST(request, { params }) {
   const metadata = body.metadata || {};
 
   const db = getDbModule();
-  if (db && db.getDb()) {
-    try {
-      await db.initialize();
-      const row = await db.addMessage({
-        id,
-        conversation_id: conversationId,
-        sender_id,
-        parent_id,
-        type: msgType,
-        content,
-        metadata,
-        reactions: [],
-      });
-      return NextResponse.json({ data: row }, { status: 201 });
-    } catch (err) {
-      console.error('DB POST failed:', err.message);
-    }
+  if (!db) {
+    return NextResponse.json({ error: 'Database module not found' }, { status: 502 });
   }
 
-  const msg = {
-    id,
-    conversation_id: conversationId,
-    sender_id,
-    parent_id,
-    type: msgType,
-    content,
-    metadata,
-    reactions: [],
-    created_at: new Date().toISOString(),
-    updated_at: null,
-    deleted_at: null,
-  };
-  const all = await readMessagesFile();
-  all.push(msg);
-  await writeMessagesFile(all);
-  return NextResponse.json({ data: msg }, { status: 201 });
+  try {
+    await db.initialize();
+    const dbType = db.getDb();
+    
+    if (!dbType) {
+      return NextResponse.json({ error: 'No database configured' }, { status: 502 });
+    }
+
+    const row = await db.addMessage({
+      id,
+      conversation_id: conversationId,
+      sender_id,
+      parent_id,
+      type: msgType,
+      content,
+      metadata,
+      reactions: [],
+    });
+    return NextResponse.json({ data: row }, { status: 201 });
+  } catch (err) {
+    console.error('DB POST failed:', err.message);
+    return NextResponse.json({ error: 'Database write failed', details: err.message }, { status: 502 });
+  }
 }
 
 export async function PATCH(request, { params }) {
@@ -141,32 +109,23 @@ export async function PATCH(request, { params }) {
   }
 
   const db = getDbModule();
-  if (db && db.getDb()) {
-    try {
-      await db.initialize();
-      const row = await db.toggleReaction(message_id, conversationId, user_id, emoji);
-      if (!row) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
-      return NextResponse.json({ data: row });
-    } catch (err) {
-      console.error('DB PATCH failed:', err.message);
+  if (!db) {
+    return NextResponse.json({ error: 'Database module not found' }, { status: 502 });
+  }
+
+  try {
+    await db.initialize();
+    const dbType = db.getDb();
+    
+    if (!dbType) {
+      return NextResponse.json({ error: 'No database configured' }, { status: 502 });
     }
-  }
 
-  const all = await readMessagesFile();
-  const idx = all.findIndex((m) => m.id === message_id && m.conversation_id === conversationId && !m.deleted_at);
-  if (idx === -1) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
-
-  const msg = all[idx];
-  const reactions = Array.isArray(msg.reactions) ? msg.reactions : [];
-  const existing = reactions.findIndex((r) => r.user_id === user_id && r.emoji === emoji);
-  if (existing >= 0) {
-    reactions.splice(existing, 1);
-  } else {
-    reactions.push({ user_id, emoji });
+    const row = await db.toggleReaction(message_id, conversationId, user_id, emoji);
+    if (!row) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    return NextResponse.json({ data: row });
+  } catch (err) {
+    console.error('DB PATCH failed:', err.message);
+    return NextResponse.json({ error: 'Database update failed', details: err.message }, { status: 502 });
   }
-  msg.reactions = reactions;
-  msg.updated_at = new Date().toISOString();
-  all[idx] = msg;
-  await writeMessagesFile(all);
-  return NextResponse.json({ data: msg });
 }
